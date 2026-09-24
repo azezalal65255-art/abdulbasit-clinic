@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { ImageUploadField } from './ImageUploadField';
+import { useClinicData } from '../../context/ClinicDataContext';
 import {
   Eye,
   Plus,
@@ -23,6 +24,7 @@ interface EndoscopyViewProps {
 }
 
 export const EndoscopyView: React.FC<EndoscopyViewProps> = ({ showToast }) => {
+  const { refreshContent } = useClinicData();
   const [procedures, setProcedures] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -156,7 +158,8 @@ export const EndoscopyView: React.FC<EndoscopyViewProps> = ({ showToast }) => {
       }
       setSaveStatus('saved');
       setIsModalOpen(false);
-      fetchProcedures();
+      await fetchProcedures();
+      await refreshContent();
     } catch (err: any) {
       showToast('error', err.message || 'فشل حفظ الإجراء');
       setSaveStatus('error', err.message);
@@ -175,7 +178,8 @@ export const EndoscopyView: React.FC<EndoscopyViewProps> = ({ showToast }) => {
     try {
       await api.deleteEndoscopy(id);
       showToast('info', 'تم نقل المنظار إلى سلة المحذوفات');
-      fetchProcedures();
+      await fetchProcedures();
+      await refreshContent();
     } catch (err: any) {
       showToast('error', err.message || 'فشل الحذف');
     }

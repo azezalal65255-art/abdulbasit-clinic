@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { ImageUploadField } from './ImageUploadField';
 import { uploadOriginalImage } from '../../services/uploadService';
+import { useClinicData } from '../../context/ClinicDataContext';
 import {
   Settings,
   Save,
@@ -21,6 +22,7 @@ interface SiteSettingsViewProps {
 }
 
 export const SiteSettingsView: React.FC<SiteSettingsViewProps> = ({ showToast }) => {
+  const { refreshContent } = useClinicData();
   const [settings, setSettings] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -47,6 +49,7 @@ export const SiteSettingsView: React.FC<SiteSettingsViewProps> = ({ showToast })
     isReady: !isLoading && settings !== null,
     onSave: async (updated) => {
       await api.updateSettings(updated);
+      await refreshContent();
     },
   });
 
@@ -54,9 +57,13 @@ export const SiteSettingsView: React.FC<SiteSettingsViewProps> = ({ showToast })
     e.preventDefault();
     setIsSaving(true);
     try {
-      await api.updateSettings(settings);
+      const res = await api.updateSettings(settings);
+      if (res) {
+        setSettings(res);
+      }
       markSavedImmediately(settings);
-      showToast('success', 'تم حفظ إعدادات الموقع العام بنجاح');
+      await refreshContent();
+      showToast('success', 'تم حفظ إعدادات الموقع العام وتحديث الواجهة مباشرة بنجاح');
     } catch (err: any) {
       showToast('error', err.message || 'فشل حفظ الإعدادات');
     } finally {
@@ -80,8 +87,11 @@ export const SiteSettingsView: React.FC<SiteSettingsViewProps> = ({ showToast })
 
     try {
       const uploadedUrl = await uploadOriginalImage(file);
-      setSettings((prev: any) => ({ ...prev, logoUrl: uploadedUrl }));
-      showToast('success', 'تم حفظ الشعار الأصلي بدقة 100%، اضغط "حفظ الإعدادات" لتثبيته');
+      const updatedSettings = { ...settings, logoUrl: uploadedUrl };
+      setSettings(updatedSettings);
+      await api.updateSettings(updatedSettings);
+      await refreshContent();
+      showToast('success', 'تم رفع وحفظ الشعار في Supabase Storage وتحديث الموقع مباشرة');
     } catch (err: any) {
       showToast('error', err.message || 'تعذر رفع الصورة. يرجى المحاولة مرة أخرى.');
     }

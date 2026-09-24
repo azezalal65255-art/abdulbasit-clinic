@@ -8,3 +8,11 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: VITE_SUPABASE_URL
+        value: https://rmvhgoewsegyohdbsjsd.supabase.co
+      - key: VITE_SUPABASE_PUBLISHABLE_KEY
+        value: sb_publishable_yROJ40jpb1d5RdyfJ3zeRQ_hfN_VmPu
+      - key: SUPABASE_URL
+        value: https://rmvhgoewsegyohdbsjsd.supabase.co
+      - key: SUPABASE_ANON_KEY
+        value: sb_publishable_yROJ40jpb1d5RdyfJ3zeRQ_hfN_VmPu

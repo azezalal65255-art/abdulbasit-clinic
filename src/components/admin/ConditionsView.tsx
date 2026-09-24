@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
+import { useClinicData } from '../../context/ClinicDataContext';
 import {
   HeartPulse,
   Plus,
@@ -22,6 +23,7 @@ interface ConditionsViewProps {
 }
 
 export const ConditionsView: React.FC<ConditionsViewProps> = ({ showToast }) => {
+  const { refreshContent } = useClinicData();
   const [conditions, setConditions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -135,7 +137,8 @@ export const ConditionsView: React.FC<ConditionsViewProps> = ({ showToast }) => 
         showToast('success', 'تمت إضافة الحالة الجديدة بالكلمات الافتتاحية بنجاح');
       }
       setIsModalOpen(false);
-      fetchConditions();
+      await fetchConditions();
+      await refreshContent();
     } catch (err: any) {
       showToast('error', err.message || 'فشل حفظ الحالة');
     }
@@ -145,7 +148,8 @@ export const ConditionsView: React.FC<ConditionsViewProps> = ({ showToast }) => 
     try {
       await api.updateCondition(item.id, { isActive: !item.isActive });
       showToast('success', item.isActive ? 'تم إخفاء الحالة' : 'تم إظهار الحالة');
-      fetchConditions();
+      await fetchConditions();
+      await refreshContent();
     } catch (err: any) {
       showToast('error', err.message || 'فشل تغيير الحالة');
     }
@@ -156,7 +160,8 @@ export const ConditionsView: React.FC<ConditionsViewProps> = ({ showToast }) => 
     try {
       await api.deleteCondition(id);
       showToast('info', 'تم نقل الحالة إلى سلة المحذوفات');
-      fetchConditions();
+      await fetchConditions();
+      await refreshContent();
     } catch (err: any) {
       showToast('error', err.message || 'فشل الحذف');
     }

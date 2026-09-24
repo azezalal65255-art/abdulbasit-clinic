@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
+import { useClinicData } from '../../context/ClinicDataContext';
 import {
   Activity,
   Plus,
@@ -36,6 +37,7 @@ const AVAILABLE_ICONS = [
 ];
 
 export const ServicesView: React.FC<ServicesViewProps> = ({ showToast }) => {
+  const { refreshContent } = useClinicData();
   const [services, setServices] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -115,7 +117,8 @@ export const ServicesView: React.FC<ServicesViewProps> = ({ showToast }) => {
         showToast('success', 'تمت إضافة الخدمة الجديدة بنجاح');
       }
       setIsModalOpen(false);
-      fetchServices();
+      await fetchServices();
+      await refreshContent();
     } catch (err: any) {
       showToast('error', err.message || 'فشل حفظ الخدمة');
     }
@@ -125,7 +128,8 @@ export const ServicesView: React.FC<ServicesViewProps> = ({ showToast }) => {
     try {
       await api.updateService(s.id, { isActive: !s.isActive });
       showToast('success', s.isActive ? 'تم إخفاء الخدمة من الموقع' : 'تم تفعيل وظهور الخدمة');
-      fetchServices();
+      await fetchServices();
+      await refreshContent();
     } catch (err: any) {
       showToast('error', err.message || 'فشل تغيير حالة الخدمة');
     }
@@ -138,7 +142,8 @@ export const ServicesView: React.FC<ServicesViewProps> = ({ showToast }) => {
     try {
       await api.deleteService(id);
       showToast('info', 'تم نقل الخدمة إلى سلة المحذوفات');
-      fetchServices();
+      await fetchServices();
+      await refreshContent();
     } catch (err: any) {
       showToast('error', err.message || 'فشل حذف الخدمة');
     }

@@ -444,7 +444,7 @@ export const VideosView: React.FC<VideosViewProps> = ({ showToast }) => {
                     type="text"
                     value={formData.uploadedUrl}
                     onChange={(e) => setFormData({ ...formData, uploadedUrl: e.target.value })}
-                    placeholder="/uploads/my-clinical-guide-video.mp4"
+                    placeholder="https://... رابط ملف الفيديو"
                     className="w-full py-2 px-3 bg-[#F8FAFC] border border-[#E2EAF0] rounded-xl text-xs font-mono"
                     dir="ltr"
                   />

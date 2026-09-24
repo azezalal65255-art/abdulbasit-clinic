@@ -1405,7 +1405,7 @@ apiRouter.post('/admin/media/delete-by-url', requireAuth, requireRole(['admin', 
 });
 
 // Replace existing media item and globally update all references
-apiRouter.post('/admin/media/:id/replace', requireAuth, requireRole(['admin', 'content_manager']), handleMulterUpload, (req: AuthenticatedRequest, res: Response) => {
+apiRouter.post('/admin/media/:id/replace', requireAuth, requireRole(['admin', 'content_manager']), handleMulterUpload, async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;
   const data = db.get();
   const mediaItem = data.media.find((m) => m.id === id);
@@ -1418,18 +1418,46 @@ apiRouter.post('/admin/media/:id/replace', requireAuth, requireRole(['admin', 'c
   let newMime = mediaItem.fileType;
 
   if (req.file) {
-    const fileName = req.file.filename;
-    syncFileToDist(fileName);
-    newUrl = `/uploads/${fileName}`;
-    newName = req.file.originalname || fileName;
+    const isVideo = req.file.mimetype.startsWith('video/');
+    const folder = isVideo ? 'videos' : 'images';
+    const timestamp = Date.now();
+    const randomSuffix = Math.random().toString(36).substring(2, 7);
+    const cleanName = req.file.originalname.replace(/[^a-zA-Z0-9_\-\.]/g, '_');
+    const uniqueFileName = `${timestamp}-${randomSuffix}-${cleanName}`;
+    const storageKey = `${folder}/${uniqueFileName}`;
+
     try {
-      const decoded = Buffer.from(newName, 'latin1').toString('utf8');
-      if (/[\u0600-\u06FF]/.test(decoded)) {
-        newName = decoded;
+      const { createClient } = await import('@supabase/supabase-js');
+      const sUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://rmvhgoewsegyohdbsjsd.supabase.co';
+      const sKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_yROJ40jpb1d5RdyfJ3zeRQ_hfN_VmPu';
+      const supa = createClient(sUrl, sKey);
+
+      const { data: supaData, error: supaError } = await supa.storage
+        .from('media')
+        .upload(storageKey, req.file.buffer, {
+          contentType: req.file.mimetype,
+          cacheControl: '31536000',
+          upsert: false,
+        });
+
+      if (supaError || !supaData) {
+        throw new Error(supaError?.message || 'فشل رفع الملف إلى Supabase Storage');
       }
-    } catch {}
-    newSize = `${Math.round(req.file.size / 1024)} KB`;
-    newMime = req.file.mimetype;
+
+      const { data: pubData } = supa.storage.from('media').getPublicUrl(storageKey);
+      newUrl = pubData.publicUrl;
+      newName = req.file.originalname || uniqueFileName;
+      try {
+        const decoded = Buffer.from(newName, 'latin1').toString('utf8');
+        if (/[\u0600-\u06FF]/.test(decoded)) {
+          newName = decoded;
+        }
+      } catch {}
+      newSize = `${Math.round(req.file.size / 1024)} KB`;
+      newMime = req.file.mimetype;
+    } catch (err: any) {
+      return res.status(500).json({ error: `فشل استبدال الملف في Supabase Storage: ${err.message}` });
+    }
   } else if (req.body?.newUrl) {
     newUrl = String(req.body.newUrl).trim();
   }

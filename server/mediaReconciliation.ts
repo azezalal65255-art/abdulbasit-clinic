@@ -78,6 +78,9 @@ function deriveCategory(fileName: string): string {
  */
 export function checkFileExists(urlOrPath: string): { exists: boolean; physicalPath: string | null } {
   if (!urlOrPath) return { exists: false, physicalPath: null };
+  if (urlOrPath.startsWith('http://') || urlOrPath.startsWith('https://')) {
+    return { exists: true, physicalPath: urlOrPath };
+  }
   const baseName = path.basename(urlOrPath);
 
   const candidates = [

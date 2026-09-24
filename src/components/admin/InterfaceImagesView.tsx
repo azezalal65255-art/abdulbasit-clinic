@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { ImageUploadField } from './ImageUploadField';
+import { useClinicData } from '../../context/ClinicDataContext';
 import {
   ImageIcon,
   Plus,
@@ -24,6 +25,7 @@ interface InterfaceImagesViewProps {
 }
 
 export const InterfaceImagesView: React.FC<InterfaceImagesViewProps> = ({ showToast }) => {
+  const { refreshContent } = useClinicData();
   const [activeTab, setActiveTab] = useState<'all' | 'sliders' | 'doctor' | 'services' | 'others'>('all');
   const [images, setImages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -204,7 +206,8 @@ export const InterfaceImagesView: React.FC<InterfaceImagesViewProps> = ({ showTo
 
         showToast('success', 'تم حفظ وتحديث صورة واجهة الموقع بنجاح 100%');
         setIsModalOpen(false);
-        fetchInterfaceImages();
+        await fetchInterfaceImages();
+        await refreshContent();
       } else {
         // Create custom interface image
         await api.uploadMedia({
@@ -216,7 +219,8 @@ export const InterfaceImagesView: React.FC<InterfaceImagesViewProps> = ({ showTo
         });
         showToast('success', 'تمت إضافة الصورة المخصصة للواجهة بنجاح 100%');
         setIsModalOpen(false);
-        fetchInterfaceImages();
+        await fetchInterfaceImages();
+        await refreshContent();
       }
     } catch (err: any) {
       showToast('error', err.message || 'تعذر حفظ تحديثات الصورة');

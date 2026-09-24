@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../../services/api';
 import { uploadOriginalImage } from '../../services/uploadService';
+import { useClinicData } from '../../context/ClinicDataContext';
 import {
   Image as ImageIcon,
   Plus,
@@ -33,6 +34,7 @@ const FALLBACK_SVG =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400' viewBox='0 0 600 400'%3E%3Crect width='600' height='400' fill='%23F4F9FD'/%3E%3Crect x='20' y='20' width='560' height='360' rx='16' fill='%23FFFFFF' stroke='%23BED8EA' stroke-width='2'/%3E%3Ccircle cx='300' cy='170' r='48' fill='%23E2EAF0'/%3E%3Cpath d='M285 170h30M300 155v30' stroke='%23064B82' stroke-width='5' stroke-linecap='round'/%3E%3Ctext x='300' y='250' text-anchor='middle' font-family='sans-serif' font-size='16' font-weight='bold' fill='%23064B82'%3E%D8%B9%D9%8A%D8%A7%D8%AF%D8%A9 %D8%AF. %D8%B9%D8%A8%D8%AF%D8%A7%D9%84%D8%A8%D8%A7%D8%B3%D8%B7 %D9%85%D9%82%D8%A8%D9%84%3C/text%3E%3Ctext x='300' y='275' text-anchor='middle' font-family='sans-serif' font-size='12' fill='%23667788'%3E%D8%B5%D9%88%D8%B1%D8%A9 %D8%B7%D8%A8%D9%8A%D8%A9 %D9%85%D8%B9%D8%AA%D9%85%D8%AF%D8%A9%3C/text%3E%3C/svg%3E";
 
 export const MediaLibraryView: React.FC<MediaLibraryViewProps> = ({ showToast }) => {
+  const { refreshContent } = useClinicData();
   const [mediaList, setMediaList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isReconciling, setIsReconciling] = useState(false);
@@ -189,7 +191,8 @@ export const MediaLibraryView: React.FC<MediaLibraryViewProps> = ({ showToast })
       setIsUploadModalOpen(false);
       setSelectedFile(null);
       setNewImage({ title: '', url: '', category: 'عيادة', isVideo: false, youtubeUrl: '', duration: '' });
-      fetchMedia();
+      await fetchMedia();
+      await refreshContent();
     } catch (err: any) {
       showToast('error', err.message || 'تعذر رفع الملف. يرجى المحاولة مرة أخرى.');
     } finally {
@@ -305,7 +308,8 @@ export const MediaLibraryView: React.FC<MediaLibraryViewProps> = ({ showToast })
         'success',
         `تم استبدال الصورة وتحديث ${res.updatedCount || 1} مواضع في الموقع بنجاح 100%!`
       );
-      fetchMedia();
+      await fetchMedia();
+      await refreshContent();
     } catch (err: any) {
       showToast('error', err.message || 'فشل استبدال الصورة');
     } finally {

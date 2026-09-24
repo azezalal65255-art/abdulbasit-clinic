@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { ImageUploadField } from './ImageUploadField';
+import { useClinicData } from '../../context/ClinicDataContext';
 import {
   BookOpen,
   Plus,
@@ -29,6 +30,7 @@ interface ArticlesViewProps {
 }
 
 export const ArticlesView: React.FC<ArticlesViewProps> = ({ showToast }) => {
+  const { refreshContent } = useClinicData();
   const [articles, setArticles] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,7 +45,7 @@ export const ArticlesView: React.FC<ArticlesViewProps> = ({ showToast }) => {
     excerpt: '',
     category: 'الجهاز الهضمي',
     readTime: '4 دقائق',
-    image: '/images/clinic-waiting.jpg',
+    image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/clinic-logo.jpg',
     content: '',
     status: 'published',
     keywordsText: '',
@@ -221,7 +223,8 @@ export const ArticlesView: React.FC<ArticlesViewProps> = ({ showToast }) => {
       }
       setSaveStatus('saved');
       setIsModalOpen(false);
-      fetchArticles();
+      await fetchArticles();
+      await refreshContent();
     } catch (err: any) {
       showToast('error', err.message || 'فشل حفظ المقال');
       setSaveStatus('error', err.message);
@@ -240,7 +243,8 @@ export const ArticlesView: React.FC<ArticlesViewProps> = ({ showToast }) => {
     try {
       await api.updateArticle(a.id, { status: newStatus });
       showToast('success', newStatus === 'published' ? 'تم نشر المقال على الموقع' : 'تم تحويل المقال إلى مسودة');
-      fetchArticles();
+      await fetchArticles();
+      await refreshContent();
     } catch (err: any) {
       showToast('error', err.message || 'فشل تغيير حالة المقال');
     }
@@ -251,7 +255,8 @@ export const ArticlesView: React.FC<ArticlesViewProps> = ({ showToast }) => {
     try {
       await api.deleteArticle(id);
       showToast('info', 'تم نقل المقال إلى سلة المحذوفات');
-      fetchArticles();
+      await fetchArticles();
+      await refreshContent();
     } catch (err: any) {
       showToast('error', err.message || 'فشل حذف المقال');
     }
@@ -261,7 +266,8 @@ export const ArticlesView: React.FC<ArticlesViewProps> = ({ showToast }) => {
     try {
       await api.restoreArticle(id);
       showToast('success', `تمت استعادة مقال "${title}" بنجاح ونشره على الموقع`);
-      fetchArticles();
+      await fetchArticles();
+      await refreshContent();
     } catch (err: any) {
       showToast('error', err.message || 'فشل استعادة المقال');
     }

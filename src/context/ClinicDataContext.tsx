@@ -97,7 +97,7 @@ const defaultState: ClinicDataState = {
     title: CLINIC_INFO.doctorTitle,
     jobTitle: 'استشاري أول ورئيس وحدة الجهاز الهضمي والكبد والمناظير',
     bio: 'استشاري متخصص في تشخيص وعلاج أمراض الجهاز الهضمي وأمراض الكبد المزمنة وإجراء مناظير المعدة والقولون التشخيصية والعلاجية، حاصل على الماجستير والدكتوراه من كلية الطب بجامعة القاهرة (قصر العيني).',
-    photo: '/images/dr-abdulbasit.jpg',
+    photo: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/dr-abdulbasit.jpg',
     experiences: [
       'خبرة سريرية وأكاديمية متقدمة في أمراض الجهاز الهضمي والكبد',
       'إجراء آلاف المناظير التشخيصية والعلاجية للمعدة والقولون بنسب أمان ونجاح عالية',
@@ -148,7 +148,7 @@ const defaultState: ClinicDataState = {
     clinicName: CLINIC_INFO.clinicName,
     doctorName: CLINIC_INFO.doctorName,
     doctorSpecialty: CLINIC_INFO.doctorTitle,
-    logoUrl: '/images/clinic-logo.jpg',
+    logoUrl: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/clinic-logo.jpg',
     heroHeadline: 'رعاية متقدمة لأمراض الجهاز الهضمي والكبد والمناظير',
     heroSubheadline: 'تشخيص دقيق وعلاج متخصص بإشراف د. عبدالباسط عبده الحاج مقبل، استشاري الباطنة والجهاز الهضمي والكبد والمناظير، وفق أحدث المعايير الطبية العالمية.',
     bookButtonText: 'حجز موعد استشارة',

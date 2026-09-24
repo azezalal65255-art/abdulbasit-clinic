@@ -99,7 +99,7 @@ function getDefaultDatabase(): DatabaseSchema {
     title: 'استشاري الباطنة والجهاز الهضمي والكبد والمناظير',
     jobTitle: 'استشاري أول ورئيس وحدة الجهاز الهضمي والكبد والمناظير',
     bio: 'استشاري متخصص في تشخيص وعلاج أمراض الجهاز الهضمي وأمراض الكبد المزمنة وإجراء مناظير المعدة والقولون التشخيصية والعلاجية، حاصل على الماجستير والدكتوراه من كلية الطب بجامعة القاهرة (قصر العيني). يكرس خبرته السريرية الطويلة لتقديم رعاية طبية دقيقة ومبنية على أحدث البراهين والبروتوكولات العالمية.',
-    photo: '/images/dr-abdulbasit.jpg',
+    photo: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/dr-abdulbasit.jpg',
     experiences: [
       'خبرة سريرية وأكاديمية متقدمة في أمراض الجهاز الهضمي والكبد',
       'إجراء آلاف المناظير التشخيصية والعلاجية للمعدة والقولون بنسب أمان ونجاح عالية',
@@ -150,7 +150,7 @@ function getDefaultDatabase(): DatabaseSchema {
       description: 'تشخيص ومتابعة أمراض الكبد والتهابات الكبد وارتفاع إنزيمات الكبد والكبد الدهني وغيرها من الحالات المتعلقة بالكبد.',
       fullDescription: 'نقدم تقييماً شاملاً لجميع اعتلالات الكبد الحادة والمزمنة، بما في ذلك الكبد الدهني، والتليف الكبدي، والتهابات الكبد الفيروسية (B و C)، مع بروتوكولات دوائية ومتابعة دورية منتظمة لوظائف الكبد ومستويات الإنزيمات.',
       iconName: 'Activity',
-      image: '/images/clinic-logo.jpg',
+      image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/clinic-logo.jpg',
       features: [
         'تشخيص وعلاج الكبد الدهني واضطرابات الدهون',
         'متابعة ارتفاع إنزيمات الكبد المزمن والحاد',
@@ -171,7 +171,7 @@ function getDefaultDatabase(): DatabaseSchema {
       description: 'تشخيص ومتابعة اضطرابات الجهاز الهضمي والمعدة والمريء والقولون والأمعاء.',
       fullDescription: 'علاج متكامل لمشاكل الجهاز الهضمي العلوي والسفلي، بدءاً من جرثومة المعدة المقاومة وقرحة الاثني عشر، ووصولاً إلى متلازمة القولون العصبي وحساسية القمح وعسر الهضم الوظيفي.',
       iconName: 'Stethoscope',
-      image: '/images/endoscopy-gastro.jpg',
+      image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/endoscopy-gastro.jpg',
       features: [
         'علاج ارتجاع المريء وحموضة المعدة المزمنة',
         'تشخيص وعلاج جرثومة المعدة (H. Pylori)',
@@ -192,7 +192,7 @@ function getDefaultDatabase(): DatabaseSchema {
       description: 'تقييم وتشخيص ومتابعة الحالات المرتبطة بالأمراض الباطنية المعقدة والمزمنة.',
       fullDescription: 'فحص سريري واستقصائي شامل للأمراض الباطنية وتفاعلاتها مع الجهاز الهضمي، مثل فقر الدم غير المفسر، ونقص الفيتامينات، وأمراض المناعة الذاتية، ومضاعفات الأدوية المزمنة.',
       iconName: 'HeartHandshake',
-      image: '/images/dr-abdulbasit.jpg',
+      image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/dr-abdulbasit.jpg',
       features: [
         'الفحص الشامل للحالات الباطنية العامة',
         'تقييم أسباب فقر الدم غير المبرر ونقص الفيتامينات',
@@ -213,7 +213,7 @@ function getDefaultDatabase(): DatabaseSchema {
       description: 'فحص بصري دقيق للمريء والمعدة والاثني عشر بأحدث مناظير الفيديو عالية الدقة.',
       fullDescription: 'إجراء منظار المعدة بكاميرا فائقة الوضوح للكشف عن القرح، الالتهابات، جرثومة المعدة، والنزيف، تحت مهدئ خفيف ومخدر موضعي لراحة تامة للمريض خلال 10 دقائق.',
       iconName: 'Eye',
-      image: '/images/endoscopy-gastro.jpg',
+      image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/endoscopy-gastro.jpg',
       features: [
         'فحص دقيق لجدار المريء والمعدة والاثني عشر',
         'الكشف المباشر عن القرح والالتهابات والنزيف',
@@ -234,7 +234,7 @@ function getDefaultDatabase(): DatabaseSchema {
       description: 'فحص القولون والمستقيم للكشف المبكر عن الزوائد اللحمية والتهابات الأمعاء المزمنة.',
       fullDescription: 'تنظير تخصصي كامل للقولون لتقييم حالات الإسهال أو الإمساك المزمن والنزيف الهضمي، واستئصال الزوائد اللحمية وقائياً لمنع تحولها إلى أورام.',
       iconName: 'ShieldAlert',
-      image: '/images/endoscopy-colon.jpg',
+      image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/endoscopy-colon.jpg',
       features: [
         'الكشف المبكر عن زوائد القولون واستئصالها',
         'تشخيص التهاب القولون التقرحي ومرض كرون',
@@ -255,7 +255,7 @@ function getDefaultDatabase(): DatabaseSchema {
       description: 'أخذ عينات مجهرية دقيقة دون أي ألم أثناء إجراء المنظار للتحليل الباثولوجي.',
       fullDescription: 'أخذ عينات نسيجية مجهرية من بطانة المعدة أو القولون بواسطة ملقط منظاري دقيق، لإرسالها للفحص الباثولوجي وتأكيد تشخيص حساسية القمح أو جرثومة المعدة بدقة مخبرية متناهية.',
       iconName: 'Layers',
-      image: '/images/endoscopy-biopsy.jpg',
+      image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/endoscopy-biopsy.jpg',
       features: [
         'عينات دقيقة بأمان وعناية فائقة',
         'تأكيد تشخيص حساسية القمح (السيلياك)',
@@ -483,7 +483,7 @@ function getDefaultDatabase(): DatabaseSchema {
       title: 'منظار المعدة',
       slug: 'gastroscopy',
       description: 'يساعد في تقييم المريء والمعدة والاثني عشر وفق الحالة الطبية بدقة بصرية عالية.',
-      image: '/images/endoscopy-gastro.jpg',
+      image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/endoscopy-gastro.jpg',
       indications: [
         'تقييم أسباب آلام المعدة وحرقة المريء المستمرة',
         'الكشف عن القرح والالتهابات والزوائد اللحمية',
@@ -512,7 +512,7 @@ function getDefaultDatabase(): DatabaseSchema {
       title: 'منظار القولون',
       slug: 'colonoscopy',
       description: 'يساعد في تقييم القولون والكشف عن العديد من التغيرات والأمراض بأحدث التقنيات.',
-      image: '/images/endoscopy-colon.jpg',
+      image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/endoscopy-colon.jpg',
       indications: [
         'فحص القولون وتقييم حالات الإسهال أو الإمساك المزمن',
         'الكشف المبكر عن زوائد القولون واستئصالها وقائيًا',
@@ -541,7 +541,7 @@ function getDefaultDatabase(): DatabaseSchema {
       title: 'أخذ الخزعات',
       slug: 'biopsy',
       description: 'أخذ عينات دقيقة عند الحاجة وفق تقييم الطبيب والحالة الطبية وإرسالها للفحص المجهري.',
-      image: '/images/endoscopy-biopsy.jpg',
+      image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/endoscopy-biopsy.jpg',
       indications: [
         'تأكيد تشخيص الالتهابات المزمنة وضمان دقة العلاج',
         'فحص مجهري دقيق لحساسية القمح (السيلياك)',
@@ -562,7 +562,7 @@ function getDefaultDatabase(): DatabaseSchema {
       title: 'التحضير للمنظار',
       slug: 'prep',
       description: 'تعليمات وإرشادات طبية مهمة ومفصلة للتحضير الآمن والمثالي قبل إجراء المنظار.',
-      image: '/images/endoscopy-prep.jpg',
+      image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/endoscopy-prep.jpg',
       indications: [
         'إرشادات الصيام الدقيقة لمناظير المعدة والقولون',
         'تنظيم مواعيد أدوية الضغط والسكري وسيولة الدم بالتنسيق مع الطبيب',
@@ -600,7 +600,7 @@ function getDefaultDatabase(): DatabaseSchema {
       author: 'د. عبدالباسط عبده الحاج مقبل',
       readTime: '3 دقائق',
       date: '2026-02-15',
-      image: '/images/endoscopy-gastro.jpg',
+      image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/endoscopy-gastro.jpg',
       tags: ['المعدة', 'عسر الهضم', 'جرثومة المعدة', 'حموضة'],
       keywords: ['ألم المعدة بعد الأكل', 'علاج جرثومة المعدة صنعاء', 'أعراض قرحة المعدة', 'حموضة المعدة', 'استشاري جهاز هضمي صنعاء'],
       metaTitle: 'ألم المعدة بعد الأكل: الأسباب والتشخيص والعلاج | د. عبدالباسط مقبل',
@@ -629,7 +629,7 @@ function getDefaultDatabase(): DatabaseSchema {
       author: 'د. عبدالباسط عبده الحاج مقبل',
       readTime: '4 دقائق',
       date: '2026-02-20',
-      image: '/images/clinic-logo.jpg',
+      image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/clinic-logo.jpg',
       tags: ['الكبد', 'إنزيمات الكبد', 'الكبد الدهني', 'تحاليل مخبرية'],
       keywords: ['ارتفاع إنزيمات الكبد', 'وظائف الكبد ALT AST', 'علاج الكبد الدهني', 'دكتور كبد صنعاء', 'التهاب الكبد الفيروسي'],
       metaTitle: 'ارتفاع إنزيمات الكبد: الأسباب ودلالات التحليل | د. عبدالباسط مقبل',
@@ -659,7 +659,7 @@ function getDefaultDatabase(): DatabaseSchema {
       author: 'د. عبدالباسط عبده الحاج مقبل',
       readTime: '4 دقائق',
       date: '2026-02-28',
-      image: '/images/endoscopy-prep.jpg',
+      image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/endoscopy-prep.jpg',
       tags: ['منظار المعدة', 'مناظير الجهاز الهضمي', 'تشخيص', 'خزعة'],
       keywords: ['منظار المعدة صنعاء', 'مناظير الجهاز الهضمي اليمن', 'فحص جرثومة المعدة بالمنظار', 'منظار القولون بدون ألم', 'مركز المأمون الطبي'],
       metaTitle: 'متى تحتاج لمنظار المعدة؟ الحالات وخطوات الإجراء | د. عبدالباسط مقبل',
@@ -839,7 +839,7 @@ function getDefaultDatabase(): DatabaseSchema {
     {
       id: 'med_1',
       name: 'صورة د. عبدالباسط مقبل الرسمية',
-      url: '/images/dr-abdulbasit.jpg',
+      url: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/dr-abdulbasit.jpg',
       altText: 'د. عبدالباسط عبده الحاج مقبل استشاري الباطنة والجهاز الهضمي والكبد والمناظير',
       fileSize: '420 KB',
       fileType: 'image/jpeg',
@@ -848,7 +848,7 @@ function getDefaultDatabase(): DatabaseSchema {
     {
       id: 'med_2',
       name: 'شعار العيادة الرسمي',
-      url: '/images/clinic-logo.jpg',
+      url: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/clinic-logo.jpg',
       altText: 'شعار عيادة د. عبدالباسط مقبل للجهاز الهضمي والمناظير',
       fileSize: '180 KB',
       fileType: 'image/jpeg',
@@ -857,7 +857,7 @@ function getDefaultDatabase(): DatabaseSchema {
     {
       id: 'med_3',
       name: 'صورة منظار المعدة',
-      url: '/images/endoscopy-gastro.jpg',
+      url: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/endoscopy-gastro.jpg',
       altText: 'وحدة منظار المعدة التشخيصي والعلاجي',
       fileSize: '310 KB',
       fileType: 'image/jpeg',
@@ -866,7 +866,7 @@ function getDefaultDatabase(): DatabaseSchema {
     {
       id: 'med_4',
       name: 'صورة منظار القولون',
-      url: '/images/endoscopy-colon.jpg',
+      url: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/endoscopy-colon.jpg',
       altText: 'وحدة منظار القولون التشخيصي',
       fileSize: '290 KB',
       fileType: 'image/jpeg',
@@ -903,7 +903,7 @@ function getDefaultDatabase(): DatabaseSchema {
 * يمكن العودة لتناول وجبة خفيفة بعد زوال أثر التخدير الموضعي في الحلق بنحو ساعة.
 
 📞 لأي استفسار أو تفاصيل إضافية، يرجى التواصل مع فريق العيادة مباشرة.`,
-      coverImage: '/images/endoscopy-prep.jpg',
+      coverImage: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/endoscopy-prep.jpg',
       metaTitle: 'دليل تحضير المريض لمناظير الجهاز الهضمي | عيادة د. عبدالباسط مقبل',
       metaDescription: 'إرشادات مفصلة لمرضى مناظير المعدة والقولون: تعليمات الصيام، الأدوية، وحمية تحضير الأمعاء.',
       keywords: ['تحضير منظار المعدة', 'تعليمات منظار القولون', 'صيام المنظار', 'عيادة مناظير صنعاء'],
@@ -935,7 +935,7 @@ function getDefaultDatabase(): DatabaseSchema {
 2. **اتباع التعليمات الطبية:** الالتزام بتوجيهات الطبيب والجرعات الدوائية المقررة وتعليمات التحضير للفحوصات.
 3. **احترام المواعيد:** الحضور في الموعد المحدد أو إشعار العيادة مبكراً في حال الرغبة بإلغاء الموعد أو تأجيله.
 4. **احترام الفريق الطبي والزوار:** مراعاة الهدوء والآداب العامة داخل العيادة ومرافق مركز المأمون الطبي.`,
-      coverImage: '/images/clinic-logo.jpg',
+      coverImage: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/clinic-logo.jpg',
       metaTitle: 'حقوق وواجبات المريض | عيادة د. عبدالباسط مقبل',
       metaDescription: 'ميثاق حقوق وواجبات المريض والزائر في عيادة الدكتور عبدالباسط مقبل لأمراض الباطنة والكبد والمناظير.',
       keywords: ['حقوق المريض', 'ميثاق المريض', 'عيادة دكتور عبدالباسط مقبل'],
@@ -964,7 +964,7 @@ function getDefaultDatabase(): DatabaseSchema {
     canonicalUrl: 'https://dr-abdulbasit-clinic.com',
     ogTitle: 'عيادة د. عبدالباسط عبده الحاج مقبل - استشاري الجهاز الهضمي والكبد والمناظير',
     ogDescription: 'رعاية تخصصية وخبرة سريرية وأكاديمية متقدمة في أمراض الجهاز الهضمي والكبد ومناظير المعدة والقولون.',
-    ogImage: '/images/clinic-logo.jpg',
+    ogImage: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/clinic-logo.jpg',
     robotsTxt: 'User-agent: *\nAllow: /\nDisallow: /admin/\nSitemap: https://dr-abdulbasit-clinic.com/sitemap.xml',
     sitemapEnabled: true,
     schemas: {
@@ -980,7 +980,7 @@ function getDefaultDatabase(): DatabaseSchema {
     clinicName: 'عيادة د. عبدالباسط عبده الحاج مقبل',
     doctorName: 'د. عبدالباسط عبده الحاج مقبل',
     doctorSpecialty: 'استشاري الباطنة والجهاز الهضمي والكبد والمناظير',
-    logoUrl: '/images/clinic-logo.jpg',
+    logoUrl: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/clinic-logo.jpg',
     faviconUrl: '/favicon.ico',
     heroBadge: 'رعاية طبية تخصصية متقدمة في صنعاء',
     heroHeadline: 'رعاية متقدمة لأمراض الجهاز الهضمي والكبد والمناظير',
@@ -1172,7 +1172,7 @@ function getDefaultDatabase(): DatabaseSchema {
     {
       id: 'conf_1',
       title: 'المؤتمر السنوي للجمعية الطبية لأمراض الجهاز الهضمي والكبد',
-      image: '/images/hero-doctor.png',
+      image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/hero-doctor.png',
       date: '15-17 نوفمبر 2025',
       location: 'صنعاء، اليمن',
       shortDescription: 'مشاركة علمية ببحث متخصص حول تقنيات استئصال الزوائد اللحمية بالمنظار والبروتوكولات الآمنة.',
@@ -1185,7 +1185,7 @@ function getDefaultDatabase(): DatabaseSchema {
     {
       id: 'conf_2',
       title: 'ورشة العمل المتقدمة في مناظير القولون واستئصال الأورام المبكرة',
-      image: '/images/dr-abdulbasit.jpg',
+      image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/dr-abdulbasit.jpg',
       date: '22-24 مايو 2025',
       location: 'القاهرة، جمهورية مصر العربية',
       shortDescription: 'مشاركة تدريبية وبحثية مكثفة بجامعة القاهرة قصر العيني حول أحدث معايير السلامة واستئصال الآفات المعوية.',
@@ -1198,7 +1198,7 @@ function getDefaultDatabase(): DatabaseSchema {
     {
       id: 'conf_3',
       title: 'الندوة العلمية لمستجدات علاج الكبد الدهني والتهاب الكبد المناعي',
-      image: '/images/hero-doctor.png',
+      image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/hero-doctor.png',
       date: '10 سبتمبر 2024',
       location: 'صنعاء، اليمن',
       shortDescription: 'محاضرة توعوية وسريرية حول استراتيجيات التشخيص المبكر لدهون الكبد وتجنب تليف الكبد.',
@@ -1261,7 +1261,7 @@ function getDefaultDatabase(): DatabaseSchema {
       title: 'رعاية متقدمة لأمراض الجهاز الهضمي والكبد والمناظير',
       subtitle: 'تشخيص دقيق وخبرة سريرية وأكاديمية متقدمة وفق أحدث المعايير الدولية',
       description: 'إشراف استشاري حاصل على الماجستير والدكتوراه من كلية الطب بجامعة القاهرة قصر العيني.',
-      imageUrl: '/images/hero-doctor.png',
+      imageUrl: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/hero-doctor.png',
       buttonText: 'احجز موعد استشارة',
       buttonLink: '#booking',
       order: 1,
@@ -1274,7 +1274,7 @@ function getDefaultDatabase(): DatabaseSchema {
       title: 'مناظير تشخيصية وعلاجية بأعلى معايير الأمان والراحة',
       subtitle: 'مناظير المعدة والقولون واستئصال الزوائد اللحمية بأجهزة فائقة الدقة',
       description: 'إجراءات آمنة مع رعاية تمريضية متخصصة وتعقيم آلي دقيق لضمان سلامتك الكاملة.',
-      imageUrl: '/images/hero-doctor.png',
+      imageUrl: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/hero-doctor.png',
       buttonText: 'تعرف على المناظير',
       buttonLink: '#endoscopy',
       order: 2,
@@ -1287,7 +1287,7 @@ function getDefaultDatabase(): DatabaseSchema {
       title: 'تشخيص ومتابعة أمراض الكبد الفيروسية والدهنية والمزمنة',
       subtitle: 'بروتوكولات علاجية حديثة وإرشادات غذائية وطبية متكاملة',
       description: 'فحوصات دورية ومتابعة مستمرة لدهون الكبد والتهابات الكبد المناعية والفيروسية.',
-      imageUrl: '/images/dr-abdulbasit.jpg',
+      imageUrl: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/dr-abdulbasit.jpg',
       buttonText: 'استكشف الحالات المعالجة',
       buttonLink: '#conditions',
       order: 3,

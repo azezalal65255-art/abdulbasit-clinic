@@ -2,6 +2,7 @@ import multer from 'multer';
 import { Request, Response } from 'express';
 import { db, generateId } from './db';
 import { AuthenticatedRequest } from './auth';
+import { createClient } from '@supabase/supabase-js';
 import {
   DATA_UPLOADS_DIR,
   UPLOADS_DIR,
@@ -22,121 +23,102 @@ export {
   sanitizeAndPersistMediaUrls,
 };
 
-// Multer disk storage for saving byte-for-byte exact original files directly into persistent storage
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    ensureDirectories();
-    cb(null, DATA_UPLOADS_DIR);
-  },
-  filename: (_req, file, cb) => {
-    const safeName = generateSafeFileName(file.originalname, file.mimetype);
-    cb(null, safeName);
-  },
-});
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://rmvhgoewsegyohdbsjsd.supabase.co';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_yROJ40jpb1d5RdyfJ3zeRQ_hfN_VmPu';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Multer memory storage so files can be uploaded directly to Supabase Storage
+const storage = multer.memoryStorage();
 
 export const uploadMiddleware = multer({
   storage,
   limits: {
-    fileSize: 20 * 1024 * 1024, // 20MB max file size
+    fileSize: 25 * 1024 * 1024, // 25MB max file size
   },
   fileFilter: (_req, file, cb) => {
-    if (ALLOWED_MIME_TYPES.has(file.mimetype) || file.mimetype.startsWith('image/')) {
+    if (ALLOWED_MIME_TYPES.has(file.mimetype) || file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
       cb(null, true);
     } else {
-      cb(new Error('نوع الملف غير مدعوم. يرجى رفع ملف صورة بصيغة JPG, PNG, WebP أو وثيقة PDF, DOC, DOCX فقط.'));
+      cb(new Error('نوع الملف غير مدعوم. يرجى رفع ملف صورة بصيغة JPG, PNG, WebP, SVG أو فيديو MP4.'));
     }
   },
 });
 
 // Controller for POST /api/upload
-export const handleUploadFile = (req: Request, res: Response) => {
-  // IMPORTANT:
-  // Upload the original image file only.
-  // Never call Gemini, Imagen, or any AI image generation
-  // or image editing model from this function.
-
+export const handleUploadFile = async (req: Request, res: Response) => {
   if (req.file) {
-    const fileName = req.file.filename;
-    syncFileToDist(fileName);
+    const isVideo = req.file.mimetype.startsWith('video/');
+    const folder = isVideo ? 'videos' : 'images';
+    const timestamp = Date.now();
+    const randomSuffix = Math.random().toString(36).substring(2, 7);
+    const cleanName = req.file.originalname.replace(/[^a-zA-Z0-9_\-\.]/g, '_');
+    const uniqueFileName = `${timestamp}-${randomSuffix}-${cleanName}`;
+    const storageKey = `${folder}/${uniqueFileName}`;
 
-    const publicUrl = `/uploads/${fileName}`;
-
-    let displayName = req.file.originalname || fileName;
     try {
-      const decoded = Buffer.from(displayName, 'latin1').toString('utf8');
-      if (/[\u0600-\u06FF]/.test(decoded)) {
-        displayName = decoded;
-      }
-    } catch {}
-
-    // Optionally record in media database for easy admin access
-    try {
-      const authUser = (req as AuthenticatedRequest).user;
-      const data = db.get();
-      const newMedia = {
-        id: generateId('med'),
-        name: displayName,
-        title: displayName,
-        url: publicUrl,
-        altText: displayName,
-        category: 'عيادة',
-        fileSize: `${Math.round(req.file.size / 1024)} KB`,
-        fileType: req.file.mimetype,
-        uploadedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-      };
-      data.media.unshift(newMedia);
-      if (authUser) {
-        db.logActivity(authUser, 'رفع ملف صورة أصلي', 'الوسائط', `تم حفظ الصورة الأصلية: ${newMedia.name}`);
-      }
-      db.save();
-    } catch {
-      // Non-blocking if media logging fails
-    }
-
-    return res.status(200).json({
-      success: true,
-      url: publicUrl,
-      downloadURL: publicUrl,
-      storagePath: `data/uploads/${fileName}`,
-      fileName,
-      originalName: displayName,
-      contentType: req.file.mimetype,
-      size: req.file.size,
-      mimeType: req.file.mimetype,
-      uploadedAt: new Date().toISOString(),
-    });
-  }
-
-  // Fallback: If client sent base64 JSON payload
-  const { fileData, fileName: rawName } = req.body || {};
-  if (fileData && typeof fileData === 'string' && fileData.startsWith('data:image/')) {
-    const saved = saveBase64ImageToDisk(fileData, rawName);
-    if (saved) {
-      try {
-        const data = db.get();
-        data.media.unshift({
-          id: generateId('med'),
-          name: rawName || saved.fileName,
-          url: saved.url,
-          altText: rawName || saved.fileName,
-          fileSize: `${Math.round(saved.size / 1024)} KB`,
-          fileType: 'image/jpeg',
-          uploadedAt: new Date().toISOString(),
+      const { data: supaData, error: supaError } = await supabase.storage
+        .from('media')
+        .upload(storageKey, req.file.buffer, {
+          contentType: req.file.mimetype,
+          cacheControl: '31536000',
+          upsert: false,
         });
+
+      if (supaError || !supaData) {
+        throw new Error(supaError?.message || 'فشل رفع الملف إلى Supabase Storage');
+      }
+
+      const { data: pubData } = supabase.storage.from('media').getPublicUrl(storageKey);
+      const publicUrl = pubData.publicUrl;
+
+      let displayName = req.file.originalname || uniqueFileName;
+      try {
+        const decoded = Buffer.from(displayName, 'latin1').toString('utf8');
+        if (/[\u0600-\u06FF]/.test(decoded)) {
+          displayName = decoded;
+        }
+      } catch {}
+
+      // Record in media database for admin access
+      try {
+        const authUser = (req as AuthenticatedRequest).user;
+        const data = db.get();
+        const newMedia = {
+          id: generateId('med'),
+          name: displayName,
+          title: displayName,
+          url: publicUrl,
+          storagePath: `media/${storageKey}`,
+          altText: displayName,
+          category: req.body?.category || 'عيادة',
+          fileSize: `${Math.round(req.file.size / 1024)} KB`,
+          fileType: req.file.mimetype,
+          uploadedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+        };
+        data.media.unshift(newMedia);
+        if (authUser) {
+          db.logActivity(authUser, 'رفع ملف إلى Supabase Storage', 'الوسائط', `تم رفع وحفظ: ${newMedia.name}`);
+        }
         db.save();
       } catch {}
 
       return res.status(200).json({
         success: true,
-        url: saved.url,
-        downloadURL: saved.url,
-        storagePath: `data/uploads/${saved.fileName}`,
-        fileName: saved.fileName,
-        originalName: rawName || saved.fileName,
-        contentType: 'image/jpeg',
-        size: saved.size,
+        url: publicUrl,
+        downloadURL: publicUrl,
+        storagePath: `media/${storageKey}`,
+        fileName: uniqueFileName,
+        originalName: displayName,
+        contentType: req.file.mimetype,
+        size: req.file.size,
+        mimeType: req.file.mimetype,
         uploadedAt: new Date().toISOString(),
+      });
+    } catch (err: any) {
+      console.error('[Server Supabase Upload Error]:', err);
+      return res.status(500).json({
+        error: `فشل رفع الملف إلى التخزين الدائم: ${err.message || 'خطأ غير معروف'}`,
       });
     }
   }
@@ -145,3 +127,4 @@ export const handleUploadFile = (req: Request, res: Response) => {
     error: 'لم يتم استلام أي ملف صورة صالح للرفع. يرجى اختيار ملف صورة.',
   });
 };
+

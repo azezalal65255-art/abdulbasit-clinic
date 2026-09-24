@@ -440,7 +440,7 @@ export const ResearchView: React.FC<ResearchViewProps> = ({ showToast }) => {
                   type="text"
                   value={formData.pdfUrl}
                   onChange={(e) => setFormData({ ...formData, pdfUrl: e.target.value })}
-                  placeholder="/uploads/research-paper.pdf أو رابط مباشر"
+                  placeholder="https://... رابط مباشر لملف البحث"
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F] text-sm text-left"
                   dir="ltr"
                 />

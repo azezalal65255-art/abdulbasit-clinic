@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { ImageUploadField } from './ImageUploadField';
+import { useClinicData } from '../../context/ClinicDataContext';
 import {
   Layers,
   Plus,
@@ -24,6 +25,7 @@ interface SlidersViewProps {
 }
 
 export const SlidersView: React.FC<SlidersViewProps> = ({ showToast }) => {
+  const { refreshContent } = useClinicData();
   const [sliders, setSliders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -63,7 +65,7 @@ export const SlidersView: React.FC<SlidersViewProps> = ({ showToast }) => {
       title: 'رعاية متقدمة لأمراض الجهاز الهضمي والكبد والمناظير',
       subtitle: 'تشخيص دقيق وعلاج متخصص بإشراف د. عبدالباسط عبده الحاج مقبل',
       badgeText: 'استشاري أول الباطنة والجهاز الهضمي',
-      image: '/images/hero-doctor.png',
+      image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/hero-doctor.png',
       buttonText: 'حجز موعد استشارة',
       buttonLink: '#booking',
       secondaryButtonText: 'تواصل عبر واتساب',
@@ -140,7 +142,8 @@ export const SlidersView: React.FC<SlidersViewProps> = ({ showToast }) => {
       }
       setSaveStatus('saved');
       setIsModalOpen(false);
-      fetchSliders();
+      await fetchSliders();
+      await refreshContent();
     } catch (err: any) {
       showToast('error', err.message || 'فشل حفظ الشريحة');
       setSaveStatus('error', err.message);
@@ -160,7 +163,8 @@ export const SlidersView: React.FC<SlidersViewProps> = ({ showToast }) => {
     try {
       await api.deleteSlider(id);
       showToast('success', 'تم نقل الشريحة إلى سلة المحذوفات');
-      fetchSliders();
+      await fetchSliders();
+      await refreshContent();
     } catch (err: any) {
       showToast('error', err.message || 'فشل حذف الشريحة');
     }
@@ -170,7 +174,8 @@ export const SlidersView: React.FC<SlidersViewProps> = ({ showToast }) => {
     try {
       await api.updateSlider(item.id, { isActive: !item.isActive });
       showToast('info', item.isActive ? 'تم إخفاء الشريحة' : 'تم تفعيل الشريحة');
-      fetchSliders();
+      await fetchSliders();
+      await refreshContent();
     } catch (err: any) {
       showToast('error', err.message || 'فشل تحديث الحالة');
     }
@@ -189,6 +194,7 @@ export const SlidersView: React.FC<SlidersViewProps> = ({ showToast }) => {
     try {
       await api.reorderSliders(newOrder.map((s) => s.id));
       showToast('success', 'تم تحديث الترتيب');
+      await refreshContent();
     } catch (err: any) {
       showToast('error', err.message || 'فشل حفظ الترتيب');
       fetchSliders();

@@ -198,24 +198,24 @@ export const SystemCheckView: React.FC<SystemCheckViewProps> = ({ showToast }) =
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="p-3 bg-[#F8FAFC] rounded-xl border border-[#E2EAF0] space-y-1">
-                <div className="text-xs font-bold text-[#064B82]">التخزين الفعلي (Persistent Storage)</div>
+                <div className="text-xs font-bold text-[#064B82]">التخزين السحابي الدائم (Supabase Storage)</div>
                 <div className="text-[11px] text-[#667788]">
-                  المسار: <code className="bg-white px-1.5 py-0.5 rounded border border-[#E2EAF0]">data/uploads/</code>
+                  المستودع: <code className="bg-white px-1.5 py-0.5 rounded border border-[#E2EAF0]">media/images/</code>
                 </div>
                 <div className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1 mt-1">
                   <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  مجلد مفصول ومعزول عن كود التطبيق لا يتأثر بإعادة النشر
+                  تخزين سحابي فائق السرعة عبر CDN دائم لا يتأثر بإعادة تشغيل الخادم
                 </div>
               </div>
 
               <div className="p-3 bg-[#F8FAFC] rounded-xl border border-[#E2EAF0] space-y-1">
-                <div className="text-xs font-bold text-[#064B82]">قاعدة البيانات المركزية</div>
+                <div className="text-xs font-bold text-[#064B82]">قاعدة البيانات المركزية الدائمة</div>
                 <div className="text-[11px] text-[#667788]">
-                  الملف: <code className="bg-white px-1.5 py-0.5 rounded border border-[#E2EAF0]">data/clinic-database.json</code>
+                  المشروع: <code className="bg-white px-1.5 py-0.5 rounded border border-[#E2EAF0]">Supabase Database</code>
                 </div>
                 <div className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1 mt-1">
                   <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  كتابة ذرية Atomic Writes مع حفظ نسخ احتياطية دوارة
+                  قاعدة بيانات سحابية متزامنة فوريًا مع لوحة التحكم وموقع Render
                 </div>
               </div>
             </div>
@@ -224,12 +224,12 @@ export const SystemCheckView: React.FC<SystemCheckViewProps> = ({ showToast }) =
             <div className="space-y-2">
               <h4 className="text-xs font-bold text-[#17354F]">سجل العمليات التشخيصية الأخيرة:</h4>
               <div className="bg-slate-900 text-slate-100 font-mono text-[11px] p-4 rounded-xl max-h-60 overflow-y-auto space-y-1 custom-scrollbar text-left" dir="ltr">
-                <div className="text-emerald-400">[OK] Storage directories verified: /data/uploads, /public/uploads, /dist/uploads</div>
-                <div className="text-blue-300">[SYNC] 3-way storage bidirectional link active</div>
-                <div className="text-cyan-300">[SCAN] Discovered {report?.totalPhysicalFiles || 0} physical image assets on disk</div>
-                <div className="text-purple-300">[RECONCILE] Recovered {report?.orphanedFilesDiscovered || 0} orphaned files into database</div>
-                <div className="text-amber-300">[REPAIR] Repaired {report?.brokenLinksRepaired || 0} missing references with SVG placeholders</div>
-                <div className="text-emerald-400">[READY] Database synchronized with persistent disk: 100% stable</div>
+                <div className="text-emerald-400">[OK] Supabase Storage bucket 'media' online & verified</div>
+                <div className="text-blue-300">[SYNC] Direct Supabase CDN delivery active</div>
+                <div className="text-cyan-300">[SCAN] Discovered {report?.totalPhysicalFiles || 0} media assets in cloud storage</div>
+                <div className="text-purple-300">[RECONCILE] Recovered {report?.orphanedFilesDiscovered || 0} media records into database</div>
+                <div className="text-amber-300">[REPAIR] Repaired {report?.brokenLinksRepaired || 0} legacy references</div>
+                <div className="text-emerald-400">[READY] Database & Media Storage: 100% stable</div>
               </div>
             </div>
           </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { ImageUploadField } from './ImageUploadField';
 import { uploadOriginalImage } from '../../services/uploadService';
+import { useClinicData } from '../../context/ClinicDataContext';
 import {
   UserCheck,
   GraduationCap,
@@ -23,6 +24,7 @@ interface DoctorProfileViewProps {
 }
 
 export const DoctorProfileView: React.FC<DoctorProfileViewProps> = ({ showToast }) => {
+  const { refreshContent } = useClinicData();
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -58,6 +60,7 @@ export const DoctorProfileView: React.FC<DoctorProfileViewProps> = ({ showToast 
     isReady: !isLoading && profile !== null,
     onSave: async (updated) => {
       await api.updateDoctorProfile(updated);
+      await refreshContent();
     },
   });
 
@@ -65,8 +68,12 @@ export const DoctorProfileView: React.FC<DoctorProfileViewProps> = ({ showToast 
     e.preventDefault();
     setIsSaving(true);
     try {
-      await api.updateDoctorProfile(profile);
+      const res = await api.updateDoctorProfile(profile);
+      if (res) {
+        setProfile(res);
+      }
       markSavedImmediately(profile);
+      await refreshContent();
       showToast('success', 'تم حفظ بيانات الطبيب والمؤهلات بنجاح، وتم تحديث الموقع مباشرة');
     } catch (err: any) {
       showToast('error', err.message || 'فشل حفظ التعديلات');
@@ -90,10 +97,13 @@ export const DoctorProfileView: React.FC<DoctorProfileViewProps> = ({ showToast 
     }
 
     try {
-      // 1. Upload exact original file to persistent storage
+      // 1. Upload exact original file to Supabase persistent storage
       const uploadedUrl = await uploadOriginalImage(file);
-      setProfile((prev: any) => ({ ...prev, photo: uploadedUrl }));
-      showToast('success', 'تم رفع وحفظ صورة الطبيب الأصلية بنجاح 100%');
+      const updatedProfile = { ...profile, photo: uploadedUrl };
+      setProfile(updatedProfile);
+      await api.updateDoctorProfile(updatedProfile);
+      await refreshContent();
+      showToast('success', 'تم رفع وحفظ صورة الطبيب في Supabase Storage وتحديث الموقع مباشرة 100%');
     } catch (err: any) {
       showToast('error', err.message || 'تعذر رفع الصورة. يرجى المحاولة مرة أخرى.');
     }

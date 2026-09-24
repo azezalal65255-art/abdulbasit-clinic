@@ -1,10 +1,12 @@
 import { supabase, SUPABASE_CONFIG } from '../lib/supabase';
 
 // ============================================================================
-// CENTRALIZED PERMANENT UPLOAD SERVICE (Supabase + Persistent Storage Engine)
+// CENTRALIZED PERMANENT SUPABASE STORAGE UPLOAD SERVICE
 // ============================================================================
-// Implements robust upload to Supabase Storage (media/images and media/videos),
-// download URL retrieval, replacement, deletion, error handling, progress tracking.
+// Uploads all media directly and permanently to Supabase Storage:
+// Bucket: 'media', Folder: 'images/' or 'videos/'
+// Generates unique timestamped filenames: images/<timestamp>-<random>-<filename>
+// Eliminates any dependency on local ephemeral /uploads directories.
 // ============================================================================
 
 export interface UploadResult {
@@ -28,9 +30,16 @@ const ALLOWED_MIME_TYPES = [
   'video/webm',
 ];
 
+function sanitizeFileName(filename: string): string {
+  return filename
+    .normalize('NFKD')
+    .replace(/[^\w\u0600-\u06FF\.\-]/g, '_')
+    .replace(/_{2,}/g, '_');
+}
+
 /**
- * 1. Uploads a file permanently with Supabase Storage as primary target,
- * with structured folders: media/images and media/videos.
+ * 1. Uploads a file permanently to Supabase Storage ('media' bucket)
+ * under 'images/' or 'videos/' with unique timestamped naming.
  */
 export async function uploadFile(
   file: File,
@@ -43,7 +52,7 @@ export async function uploadFile(
 
   // Validate MIME type
   if (!file.type.startsWith('image/') && !file.type.startsWith('video/') && !ALLOWED_MIME_TYPES.includes(file.type)) {
-    throw new Error('نوع الملف غير مدعوم. يرجى اختيار صورة أو فيديو صالح (JPG, PNG, WebP, MP4).');
+    throw new Error('نوع الملف غير مدعوم. يرجى اختيار صورة أو فيديو صالح (JPG, PNG, WebP, SVG, MP4).');
   }
 
   // Size limit: 25MB
@@ -53,84 +62,67 @@ export async function uploadFile(
 
   const isVideo = file.type.startsWith('video/');
   const folder = isVideo ? 'videos' : 'images';
-  const uniqueName = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}_${file.name.replace(/\s+/g, '_')}`;
+  const timestamp = Date.now();
+  const randomSuffix = Math.random().toString(36).substring(2, 7);
+  const cleanName = sanitizeFileName(file.name);
+  const uniqueName = `${timestamp}-${randomSuffix}-${cleanName}`;
   const supabaseFilePath = `${folder}/${uniqueName}`;
 
-  console.log(`[Upload Start] Starting upload for: ${file.name} to Supabase bucket 'media' at path '${supabaseFilePath}'`);
   if (onProgress) onProgress(20);
 
-  // Upload directly to Supabase Storage bucket 'media'
-  let downloadURL = '';
-  let storagePath = supabaseFilePath;
-  let supabaseSuccess = false;
-
-  try {
-    const { data: supaData, error: supaError } = await supabase.storage
-      .from('media')
-      .upload(supabaseFilePath, file, {
-        cacheControl: '3600',
-        upsert: false,
-        contentType: file.type,
-      });
-
-    if (onProgress) onProgress(75);
-
-    if (!supaError && supaData) {
-      const { data: pubData } = supabase.storage
-        .from('media')
-        .getPublicUrl(supabaseFilePath);
-
-      if (pubData?.publicUrl) {
-        downloadURL = pubData.publicUrl;
-        storagePath = supabaseFilePath;
-        supabaseSuccess = true;
-        console.log(`[Supabase Upload Success] File permanently saved to Supabase Storage:`, downloadURL);
-      }
-    } else if (supaError) {
-      console.warn('[Supabase Upload Warning - Falling back to persistent server storage]:', supaError.message);
-    }
-  } catch (err: any) {
-    console.warn('[Supabase Upload Exception - Falling back to persistent server storage]:', err.message);
-  }
-
-  // Fallback to local server endpoint if Supabase is still pending RLS policies or offline
-  if (!supabaseSuccess) {
-    const formData = new FormData();
-    formData.append('file', file, uniqueName);
-    formData.append('category', category);
-
-    const token = localStorage.getItem('clinic_admin_token');
-    const headers: Record<string, string> = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    if (onProgress) onProgress(80);
-
-    const response = await fetch('/api/upload', {
-      method: 'POST',
-      headers,
-      body: formData,
+  // Direct upload to Supabase Storage bucket 'media'
+  const { data: uploadData, error: uploadError } = await supabase.storage
+    .from('media')
+    .upload(supabaseFilePath, file, {
+      contentType: file.type,
+      cacheControl: '31536000', // 1 year immutable cache on CDN because filename is unique!
+      upsert: false,
     });
 
-    if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error('storage/unauthorized: انتهت صلاحية الجلسة أو ليس لديك صلاحية رفع الملفات. يرجى إعادة تسجيل الدخول.');
-      }
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || 'فشل الاتصال بخادم التخزين. تحقق من اتصال الشبكة.');
+  if (onProgress) onProgress(75);
+
+  if (uploadError || !uploadData) {
+    console.error('[Supabase Storage Upload Error]:', uploadError);
+    // If upload with arabic characters had an S3 key error, retry with ASCII-safe key
+    const asciiSafeName = `${timestamp}-${randomSuffix}-${file.name.replace(/[^a-zA-Z0-9_\-\.]/g, '_')}`;
+    const asciiPath = `${folder}/${asciiSafeName}`;
+    
+    const { data: retryData, error: retryError } = await supabase.storage
+      .from('media')
+      .upload(asciiPath, file, {
+        contentType: file.type,
+        cacheControl: '31536000',
+        upsert: false,
+      });
+
+    if (retryError || !retryData) {
+      throw new Error(`فشل رفع الصورة إلى Supabase Storage: ${retryError?.message || uploadError?.message || 'خطأ غير معروف'}`);
     }
 
-    const data = await response.json();
-    downloadURL = data.downloadURL || data.url;
-    storagePath = data.storagePath || `data/uploads/${data.fileName || uniqueName}`;
+    const { data: pubData } = supabase.storage.from('media').getPublicUrl(asciiPath);
+    const downloadURL = pubData?.publicUrl || '';
+
+    if (onProgress) onProgress(100);
+
+    return {
+      downloadURL,
+      storagePath: `media/${asciiPath}`,
+      fileName: asciiSafeName,
+      originalName: file.name,
+      contentType: file.type,
+      size: file.size,
+      uploadedAt: new Date().toISOString(),
+    };
   }
+
+  const { data: pubData } = supabase.storage.from('media').getPublicUrl(supabaseFilePath);
+  const downloadURL = pubData?.publicUrl || '';
 
   if (onProgress) onProgress(100);
 
   return {
     downloadURL,
-    storagePath,
+    storagePath: `media/${supabaseFilePath}`,
     fileName: uniqueName,
     originalName: file.name,
     contentType: file.type,
@@ -155,54 +147,43 @@ export function getPermanentDownloadURL(urlOrPath: string): string {
   if (urlOrPath.startsWith('http://') || urlOrPath.startsWith('https://') || urlOrPath.startsWith('data:')) {
     return urlOrPath;
   }
-  if (urlOrPath.startsWith('/uploads/')) {
-    return urlOrPath;
+  if (urlOrPath.startsWith('media/')) {
+    const { data } = supabase.storage.from('media').getPublicUrl(urlOrPath.replace(/^media\//, ''));
+    return data.publicUrl;
   }
-  if (urlOrPath.startsWith('data/uploads/')) {
-    return `/${urlOrPath.replace('data/', '')}`;
+  if (urlOrPath.startsWith('images/') || urlOrPath.startsWith('videos/')) {
+    const { data } = supabase.storage.from('media').getPublicUrl(urlOrPath);
+    return data.publicUrl;
   }
   return urlOrPath;
 }
 
 /**
- * 3. Delete file from storage (Supabase Storage + local backend API)
+ * 3. Delete file from storage (Supabase Storage)
  */
 export async function deleteFile(urlOrPath: string): Promise<void> {
-  console.log(`[Delete File] Request to delete: ${urlOrPath}`);
+  if (!urlOrPath) return;
   try {
-    // If it's a Supabase storage asset, delete directly from bucket
     if (urlOrPath.includes('/storage/v1/object/public/media/')) {
       const parts = urlOrPath.split('/storage/v1/object/public/media/');
       if (parts[1]) {
-        const relativePath = decodeURIComponent(parts[1]);
+        const relativePath = decodeURIComponent(parts[1].split('?')[0]);
         await supabase.storage.from('media').remove([relativePath]);
-        console.log(`[Supabase Delete] Removed from bucket: ${relativePath}`);
       }
     } else if (urlOrPath.startsWith('images/') || urlOrPath.startsWith('videos/')) {
       await supabase.storage.from('media').remove([urlOrPath]);
-      console.log(`[Supabase Delete] Removed from bucket: ${urlOrPath}`);
     } else if (urlOrPath.startsWith('media/')) {
       const relativePath = urlOrPath.replace(/^media\//, '');
       await supabase.storage.from('media').remove([relativePath]);
-      console.log(`[Supabase Delete] Removed from bucket: ${relativePath}`);
     }
-
-    const token = localStorage.getItem('clinic_admin_token');
-    await fetch('/api/admin/media/delete-by-url', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify({ url: urlOrPath }),
-    }).catch(() => {});
   } catch (err) {
     console.warn('[Delete File Warning]', err);
   }
 }
 
 /**
- * 4. Replace file: uploads new file FIRST, verifies success, saves new URL, then deletes old file.
+ * 4. Replace file: uploads new unique file FIRST to Supabase Storage,
+ * gets new Public URL, and deletes old file.
  */
 export async function replaceFile(
   oldUrl: string,
@@ -210,17 +191,13 @@ export async function replaceFile(
   category: string = 'general',
   onProgress?: (percent: number) => void
 ): Promise<UploadResult> {
-  console.log(`[Replace Start] Uploading new replacement file for old: ${oldUrl}`);
-  
-  // Step 1: Upload new file first
+  // Step 1: Upload new file with unique timestamp
   const newUploadResult = await uploadFile(newFile, category, onProgress);
-  console.log(`[Replace Success] New file successfully uploaded: ${newUploadResult.downloadURL}`);
 
-  // Step 2: Delete old file after successful new upload
+  // Step 2: Delete old file if present in Supabase storage
   if (oldUrl && oldUrl !== newUploadResult.downloadURL) {
     try {
       await deleteFile(oldUrl);
-      console.log(`[Replace Cleanup] Old file removed from storage: ${oldUrl}`);
     } catch (err) {
       console.warn('[Replace Cleanup Warning] Could not remove old file:', err);
     }
@@ -228,3 +205,4 @@ export async function replaceFile(
 
   return newUploadResult;
 }
+
