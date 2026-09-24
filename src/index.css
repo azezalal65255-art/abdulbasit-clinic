@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    font-family: 'Cairo', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  body {
+    background-color: #F6FAFC;
+    color: #17354F;
+    overflow-x: hidden;
+  }
+
+  /* Section scroll padding for sticky header */
+  section {
+    scroll-margin-top: 85px;
+  }
+
+  /* Custom refined scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #F1F5F9;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+  }
+}
+
+/* Geometric Balance Background Patterns */
+.bg-geometric-grid {
+  background-color: #F6FAFC;
+  background-image: 
+    linear-gradient(to right, rgba(6, 75, 130, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(6, 75, 130, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.bg-medical-pattern {
+  background-color: #F6FAFC;
+  background-image: 
+    linear-gradient(to right, rgba(6, 75, 130, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(6, 75, 130, 0.04) 1px, transparent 1px),
+    radial-gradient(circle, rgba(85, 166, 48, 0.08) 1.5px, transparent 1.5px);
+  background-size: 32px 32px, 32px 32px, 32px 32px;
+  background-position: 0 0, 0 0, 16px 16px;
+}
+
+/* Geometric Card Component */
+.medical-card, .geometric-card {
+  background: #FFFFFF;
+  border: 1px solid #E2EAF0;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px 0 rgba(6, 75, 130, 0.04), 0 4px 12px -2px rgba(6, 75, 130, 0.03);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.medical-card:hover, .geometric-card:hover {
+  border-color: #BED8EA;
+  box-shadow: 0 4px 20px -2px rgba(6, 75, 130, 0.08), 0 2px 6px -1px rgba(6, 75, 130, 0.04);
+  transform: translateY(-2px);
+}
+
+/* Geometric Badge Component */
+.geometric-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.875rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid #E2EAF0;
+  background-color: #FFFFFF;
+}
+
+/* Geometric Accent Divider */
+.geometric-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0.75rem auto 1rem;
+}
+.geometric-divider::before,
+.geometric-divider::after {
+  content: "";
+  height: 2px;
+  width: 28px;
+  background: #E2EAF0;
+  border-radius: 2px;
+}
+.geometric-divider-center {
+  width: 20px;
+  height: 3px;
+  background: #55A630;
+  border-radius: 2px;
+}

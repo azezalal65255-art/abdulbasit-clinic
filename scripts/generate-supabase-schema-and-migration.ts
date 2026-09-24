@@ -1,0 +1,630 @@
+import 'dotenv/config';
+import fs from 'fs';
+import path from 'path';
+
+const DB_PATH = path.join(process.cwd(), 'data', 'clinic-database.json');
+const REPORT_PATH = path.join(process.cwd(), 'data', 'supabase-migration-report.json');
+const SUPABASE_STORAGE_URL_PREFIX = 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/';
+
+const ALLOWED_IMAGE_EXTS = ['.jpg', '.jpeg', '.jfif', '.png', '.webp', '.gif', '.svg'];
+
+function sanitizeForStorage(filename: string): string {
+  if (/^[a-zA-Z0-9_\-\.]+$/.test(filename)) {
+    return filename;
+  }
+  return filename.replace(/[^a-zA-Z0-9_\-\.]/g, '_');
+}
+
+function convertMediaUrl(url: string, missingSet: Set<string>): { convertedUrl: string; storagePath: string; isMissing: boolean } {
+  if (!url || typeof url !== 'string') {
+    return { convertedUrl: url, storagePath: '', isMissing: false };
+  }
+  if (url.includes('/uploads/')) {
+    const filename = path.basename(url.split('?')[0]);
+    if (missingSet.has(filename)) {
+      return {
+        convertedUrl: url, // keep original or placeholder
+        storagePath: `images/${sanitizeForStorage(filename)}`,
+        isMissing: true,
+      };
+    }
+    const safeName = sanitizeForStorage(filename);
+    const storagePath = `images/${safeName}`;
+    const convertedUrl = `${SUPABASE_STORAGE_URL_PREFIX}${storagePath}`;
+    return { convertedUrl, storagePath, isMissing: false };
+  }
+  return { convertedUrl: url, storagePath: '', isMissing: false };
+}
+
+function deepConvertMediaRefs(obj: any, missingSet: Set<string>, stats: { converted: number; missing: number }): any {
+  if (!obj) return obj;
+  if (typeof obj === 'string') {
+    if (obj.includes('/uploads/')) {
+      const { convertedUrl, isMissing } = convertMediaUrl(obj, missingSet);
+      if (isMissing) {
+        stats.missing++;
+        return obj;
+      } else {
+        stats.converted++;
+        return convertedUrl;
+      }
+    }
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map((item) => deepConvertMediaRefs(item, missingSet, stats));
+  }
+  if (typeof obj === 'object') {
+    const res: any = {};
+    for (const k of Object.keys(obj)) {
+      res[k] = deepConvertMediaRefs(obj[k], missingSet, stats);
+    }
+    return res;
+  }
+  return obj;
+}
+
+export function runDryRunAndGenerateSchema() {
+  const db = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
+  const report = fs.existsSync(REPORT_PATH) ? JSON.parse(fs.readFileSync(REPORT_PATH, 'utf8')) : { items: [] };
+
+  const missingSet = new Set<string>(
+    report.items.filter((i: any) => i.status === 'MISSING_SOURCE_FILE').map((i: any) => i.filename)
+  );
+
+  const stats = { converted: 0, missing: 0 };
+  const convertedDb = deepConvertMediaRefs(db, missingSet, stats);
+
+  // Update Media items explicitly
+  if (Array.isArray(convertedDb.media)) {
+    convertedDb.media = convertedDb.media.map((m: any) => {
+      const filename = m.file_name || m.name || path.basename(m.url || '');
+      const isMissing = missingSet.has(filename);
+      const safeName = sanitizeForStorage(filename);
+      const storagePath = `images/${safeName}`;
+      const publicUrl = `${SUPABASE_STORAGE_URL_PREFIX}${storagePath}`;
+
+      return {
+        ...m,
+        storage_path: storagePath,
+        public_url: isMissing ? (m.public_url || m.url) : publicUrl,
+        url: isMissing ? (m.url || m.public_url) : publicUrl,
+        media_status: isMissing ? 'missing_source_file' : 'active',
+      };
+    });
+  }
+
+  // Schema definitions
+  const tables = [
+    { name: 'users', count: db.users?.length || 0, isSingleton: false },
+    { name: 'doctor', count: 1, isSingleton: true },
+    { name: 'services', count: db.services?.length || 0, isSingleton: false },
+    { name: 'categories', count: db.categories?.length || 0, isSingleton: false },
+    { name: 'conditions', count: db.conditions?.length || 0, isSingleton: false },
+    { name: 'endoscopy', count: db.endoscopy?.length || 0, isSingleton: false },
+    { name: 'articles', count: db.articles?.length || 0, isSingleton: false },
+    { name: 'pages', count: db.pages?.length || 0, isSingleton: false },
+    { name: 'faqs', count: db.faqs?.length || 0, isSingleton: false },
+    { name: 'bookings', count: db.bookings?.length || 0, isSingleton: false },
+    { name: 'messages', count: db.messages?.length || 0, isSingleton: false },
+    { name: 'schedule', count: 1, isSingleton: true },
+    { name: 'contact', count: 1, isSingleton: true },
+    { name: 'media', count: db.media?.length || 0, isSingleton: false },
+    { name: 'seo', count: 1, isSingleton: true },
+    { name: 'settings', count: 1, isSingleton: true },
+    { name: 'videos', count: db.videos?.length || 0, isSingleton: false },
+    { name: 'careers', count: db.careers?.length || 0, isSingleton: false },
+    { name: 'job_applications', count: db.jobApplications?.length || 0, isSingleton: false },
+    { name: 'conferences', count: db.conferences?.length || 0, isSingleton: false },
+    { name: 'research', count: db.research?.length || 0, isSingleton: false },
+    { name: 'sliders', count: db.sliders?.length || 0, isSingleton: false },
+    { name: 'notifications', count: db.notifications?.length || 0, isSingleton: false },
+    { name: 'activity_logs', count: db.activityLogs?.length || 0, isSingleton: false },
+    { name: 'analytics', count: 1, isSingleton: true },
+    { name: 'recycle_bin', count: db.recycleBin?.length || 0, isSingleton: false },
+  ];
+
+  const totalRecords = tables.reduce((acc, t) => acc + t.count, 0);
+
+  // Generate SQL file
+  const sql = `
+-- =========================================================================
+-- COMPLETE SUPABASE POSTGRESQL SCHEMA FOR DR. ABDULBASIT CLINIC
+-- Generated for persistent relational storage with full RLS policies
+-- =========================================================================
+
+-- 1. USERS
+CREATE TABLE IF NOT EXISTS public.users (
+  id TEXT PRIMARY KEY,
+  email TEXT NOT NULL,
+  name TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'viewer',
+  password_hash TEXT NOT NULL,
+  phone TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  last_login TIMESTAMPTZ
+);
+
+-- 2. DOCTOR PROFILE
+CREATE TABLE IF NOT EXISTS public.doctor (
+  id TEXT PRIMARY KEY DEFAULT 'doctor_profile',
+  name TEXT NOT NULL,
+  title TEXT,
+  job_title TEXT,
+  bio TEXT,
+  photo TEXT,
+  experiences JSONB DEFAULT '[]'::jsonb,
+  qualifications JSONB DEFAULT '[]'::jsonb,
+  experience_years INT DEFAULT 15,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 3. SERVICES
+CREATE TABLE IF NOT EXISTS public.services (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  slug TEXT NOT NULL,
+  description TEXT,
+  full_description TEXT,
+  icon_name TEXT,
+  image TEXT,
+  features JSONB DEFAULT '[]'::jsonb,
+  meta_title TEXT,
+  meta_description TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
+  "order" INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 4. CATEGORIES
+CREATE TABLE IF NOT EXISTS public.categories (
+  id TEXT PRIMARY KEY,
+  slug TEXT NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT,
+  "order" INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 5. CONDITIONS
+CREATE TABLE IF NOT EXISTS public.conditions (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL,
+  category TEXT,
+  icon TEXT,
+  description TEXT,
+  symptoms JSONB DEFAULT '[]'::jsonb,
+  treatment_approach TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
+  "order" INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 6. ENDOSCOPY
+CREATE TABLE IF NOT EXISTS public.endoscopy (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  slug TEXT NOT NULL,
+  description TEXT,
+  image TEXT,
+  indications JSONB DEFAULT '[]'::jsonb,
+  duration TEXT,
+  prep_summary TEXT,
+  pre_instructions JSONB DEFAULT '[]'::jsonb,
+  post_instructions JSONB DEFAULT '[]'::jsonb,
+  is_active BOOLEAN DEFAULT TRUE,
+  "order" INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 7. ARTICLES
+CREATE TABLE IF NOT EXISTS public.articles (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  slug TEXT NOT NULL,
+  excerpt TEXT,
+  content TEXT,
+  category TEXT,
+  author TEXT,
+  read_time TEXT,
+  date TEXT,
+  image TEXT,
+  tags JSONB DEFAULT '[]'::jsonb,
+  meta_title TEXT,
+  meta_description TEXT,
+  status TEXT DEFAULT 'published',
+  views INT DEFAULT 0,
+  keywords TEXT,
+  is_deleted BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 8. CUSTOM PAGES
+CREATE TABLE IF NOT EXISTS public.pages (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  slug TEXT NOT NULL,
+  excerpt TEXT,
+  content TEXT,
+  cover_image TEXT,
+  meta_title TEXT,
+  meta_description TEXT,
+  keywords TEXT,
+  show_in_header BOOLEAN DEFAULT TRUE,
+  show_in_footer BOOLEAN DEFAULT TRUE,
+  "order" INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 9. FAQS
+CREATE TABLE IF NOT EXISTS public.faqs (
+  id TEXT PRIMARY KEY,
+  question TEXT NOT NULL,
+  answer TEXT NOT NULL,
+  category TEXT,
+  "order" INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 10. BOOKINGS
+CREATE TABLE IF NOT EXISTS public.bookings (
+  id TEXT PRIMARY KEY,
+  patient_name TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  whatsapp TEXT,
+  gender TEXT,
+  visit_type TEXT,
+  service_id TEXT,
+  preferred_date TEXT,
+  preferred_shift TEXT,
+  preferred_time TEXT,
+  notes TEXT,
+  status TEXT DEFAULT 'pending',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 11. MESSAGES
+CREATE TABLE IF NOT EXISTS public.messages (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  phone TEXT,
+  email TEXT,
+  subject TEXT,
+  message TEXT NOT NULL,
+  status TEXT DEFAULT 'unread',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 12. SCHEDULE
+CREATE TABLE IF NOT EXISTS public.schedule (
+  id TEXT PRIMARY KEY DEFAULT 'schedule_settings',
+  morning_hours TEXT,
+  evening_hours TEXT,
+  working_days JSONB DEFAULT '[]'::jsonb,
+  morning_active BOOLEAN DEFAULT TRUE,
+  evening_active BOOLEAN DEFAULT TRUE,
+  emergency_notice TEXT,
+  is_notice_active BOOLEAN DEFAULT FALSE,
+  holidays JSONB DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 13. CONTACT
+CREATE TABLE IF NOT EXISTS public.contact (
+  id TEXT PRIMARY KEY DEFAULT 'contact_settings',
+  phone1 TEXT,
+  phone2 TEXT,
+  whatsapp TEXT,
+  email TEXT,
+  address TEXT,
+  address_short TEXT,
+  building TEXT,
+  city TEXT,
+  country TEXT,
+  google_maps_url TEXT,
+  google_maps_embed TEXT,
+  facebook TEXT,
+  instagram TEXT,
+  youtube TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 14. MEDIA
+CREATE TABLE IF NOT EXISTS public.media (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  file_name TEXT,
+  title TEXT,
+  storage_path TEXT NOT NULL,
+  public_url TEXT,
+  url TEXT,
+  file_type TEXT,
+  mime_type TEXT,
+  file_size BIGINT DEFAULT 0,
+  category TEXT DEFAULT 'general',
+  alt_text TEXT,
+  status TEXT DEFAULT 'active',
+  media_status TEXT DEFAULT 'active',
+  is_video BOOLEAN DEFAULT FALSE,
+  usages JSONB DEFAULT '[]'::jsonb,
+  in_use BOOLEAN DEFAULT FALSE,
+  uploaded_by TEXT,
+  deleted_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 15. SEO
+CREATE TABLE IF NOT EXISTS public.seo (
+  id TEXT PRIMARY KEY DEFAULT 'seo_settings',
+  default_meta_title TEXT,
+  default_meta_description TEXT,
+  site_keywords TEXT,
+  canonical_url TEXT,
+  og_title TEXT,
+  og_description TEXT,
+  og_image TEXT,
+  robots_txt TEXT,
+  sitemap_enabled BOOLEAN DEFAULT TRUE,
+  schemas JSONB DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 16. SETTINGS
+CREATE TABLE IF NOT EXISTS public.settings (
+  id TEXT PRIMARY KEY DEFAULT 'site_settings',
+  site_name TEXT,
+  clinic_name TEXT,
+  doctor_name TEXT,
+  doctor_specialty TEXT,
+  logo_url TEXT,
+  favicon_url TEXT,
+  hero_badge TEXT,
+  hero_headline TEXT,
+  hero_subheadline TEXT,
+  book_button_text TEXT,
+  contact_button_text TEXT,
+  default_whats_app_text TEXT,
+  maintenance_mode BOOLEAN DEFAULT FALSE,
+  footer_copyright TEXT,
+  sections_config JSONB DEFAULT '{}'::jsonb,
+  sections_order JSONB DEFAULT '[]'::jsonb,
+  banners JSONB DEFAULT '[]'::jsonb,
+  whatsapp_number TEXT,
+  hero_doctor_photo TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 17. VIDEOS
+CREATE TABLE IF NOT EXISTS public.videos (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT,
+  youtube_url TEXT,
+  youtube_id TEXT,
+  thumbnail_url TEXT,
+  duration TEXT,
+  "order" INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 18. CAREERS
+CREATE TABLE IF NOT EXISTS public.careers (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  department TEXT,
+  description TEXT,
+  requirements JSONB DEFAULT '[]'::jsonb,
+  experience TEXT,
+  location TEXT,
+  employment_type TEXT,
+  deadline TEXT,
+  posted_date TEXT,
+  status TEXT DEFAULT 'active',
+  "order" INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 19. JOB APPLICATIONS
+CREATE TABLE IF NOT EXISTS public.job_applications (
+  id TEXT PRIMARY KEY,
+  career_id TEXT,
+  applicant_name TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  email TEXT,
+  resume_url TEXT,
+  cover_letter TEXT,
+  status TEXT DEFAULT 'received',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 20. CONFERENCES
+CREATE TABLE IF NOT EXISTS public.conferences (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  image TEXT,
+  date TEXT,
+  location TEXT,
+  short_description TEXT,
+  details TEXT,
+  organizer TEXT,
+  year TEXT,
+  role TEXT,
+  description TEXT,
+  certificate_url TEXT,
+  "order" INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 21. RESEARCH
+CREATE TABLE IF NOT EXISTS public.research (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  authors JSONB DEFAULT '[]'::jsonb,
+  year TEXT,
+  institution TEXT,
+  journal TEXT,
+  abstract TEXT,
+  pdf_url TEXT,
+  "order" INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 22. SLIDERS
+CREATE TABLE IF NOT EXISTS public.sliders (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  subtitle TEXT,
+  description TEXT,
+  image_url TEXT,
+  image TEXT,
+  badge_text TEXT,
+  button_text TEXT,
+  button_link TEXT,
+  secondary_button_text TEXT,
+  secondary_button_link TEXT,
+  "order" INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 23. NOTIFICATIONS
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  type TEXT DEFAULT 'info',
+  is_read BOOLEAN DEFAULT FALSE,
+  link TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 24. ACTIVITY LOGS
+CREATE TABLE IF NOT EXISTS public.activity_logs (
+  id TEXT PRIMARY KEY,
+  user_id TEXT,
+  user_name TEXT,
+  user_role TEXT,
+  action TEXT NOT NULL,
+  module TEXT NOT NULL,
+  details TEXT,
+  timestamp TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 25. ANALYTICS
+CREATE TABLE IF NOT EXISTS public.analytics (
+  id TEXT PRIMARY KEY DEFAULT 'analytics_data',
+  total_visits INT DEFAULT 0,
+  whatsapp_clicks INT DEFAULT 0,
+  phone_clicks INT DEFAULT 0,
+  booking_form_submissions INT DEFAULT 0,
+  page_views INT DEFAULT 0,
+  devices JSONB DEFAULT '{"desktop": 0, "mobile": 0, "tablet": 0}'::jsonb,
+  daily_visits JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 26. RECYCLE BIN
+CREATE TABLE IF NOT EXISTS public.recycle_bin (
+  id TEXT PRIMARY KEY,
+  entity_type TEXT NOT NULL,
+  original_id TEXT NOT NULL,
+  data JSONB NOT NULL,
+  deleted_at TIMESTAMPTZ DEFAULT NOW(),
+  deleted_by TEXT
+);
+
+-- =========================================================================
+-- ROW LEVEL SECURITY (RLS) POLICIES
+-- Allows public reads for active published website content
+-- Allows authenticated/backend management
+-- =========================================================================
+
+DO $$
+DECLARE
+  tbl text;
+BEGIN
+  FOR tbl IN
+    SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'
+  LOOP
+    EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY;', tbl);
+    EXECUTE format('DROP POLICY IF EXISTS "Public Read All" ON public.%I;', tbl);
+    EXECUTE format('CREATE POLICY "Public Read All" ON public.%I FOR SELECT USING (true);', tbl);
+    EXECUTE format('DROP POLICY IF EXISTS "Anon Insert Manage" ON public.%I;', tbl);
+    EXECUTE format('CREATE POLICY "Anon Insert Manage" ON public.%I FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);', tbl);
+  END LOOP;
+END $$;
+`;
+
+  const supabaseDir = path.join(process.cwd(), 'supabase');
+  if (!fs.existsSync(supabaseDir)) fs.mkdirSync(supabaseDir, { recursive: true });
+  fs.writeFileSync(path.join(supabaseDir, 'schema.sql'), sql, 'utf8');
+
+  // Dry run report object
+  const dryRunReport = {
+    timestamp: new Date().toISOString(),
+    tablesToCreate: tables.map((t) => ({ table: t.name, expectedRecords: t.count })),
+    totalTables: tables.length,
+    totalRecordsToImport: totalRecords,
+    mediaReferencesToConvert: stats.converted,
+    missingMediaReferences: stats.missing,
+    missingMediaFilenames: Array.from(missingSet),
+    duplicates: 0,
+    invalidRecords: 0,
+    convertedDatabaseSample: {
+      servicesSample: convertedDb.services?.[0],
+      articlesSample: convertedDb.articles?.[0],
+      mediaSample: convertedDb.media?.[0],
+    },
+  };
+
+  fs.writeFileSync(
+    path.join(process.cwd(), 'data', 'supabase-dry-run-report.json'),
+    JSON.stringify(dryRunReport, null, 2),
+    'utf8'
+  );
+
+  // Save converted database state as ready-to-import payload
+  fs.writeFileSync(
+    path.join(process.cwd(), 'data', 'clinic-database.supabase-ready.json'),
+    JSON.stringify(convertedDb, null, 2),
+    'utf8'
+  );
+
+  return dryRunReport;
+}
+
+const result = runDryRunAndGenerateSchema();
+console.log('DRY RUN REPORT COMPLETED:');
+console.log(JSON.stringify(result, null, 2));
