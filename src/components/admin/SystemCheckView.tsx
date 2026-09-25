@@ -103,12 +103,12 @@ export const SystemCheckView: React.FC<SystemCheckViewProps> = ({ showToast }) =
           </button>
 
           <button
-            onClick={handleRunReconciliation}
-            disabled={isRunningReconciliation}
-            className="inline-flex items-center gap-1.5 py-2 px-4 bg-[#064B82] hover:bg-[#0B70B7] text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+            disabled={true}
+            className="inline-flex items-center gap-1.5 py-2 px-4 bg-gray-100 text-gray-400 text-xs font-bold rounded-xl border border-gray-200 shadow-xs cursor-not-allowed opacity-60"
+            title="تم تعطيل فحص ومطابقة الوسائط مؤقتًا"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRunningReconciliation ? 'animate-spin' : ''}`} />
-            {isRunningReconciliation ? 'جاري الفحص والمطابقة...' : 'تشغيل فحص ومطابقة الوسائط'}
+            <RefreshCw className="w-3.5 h-3.5" />
+            تشغيل فحص ومطابقة الوسائط
           </button>
         </div>
       </div>
@@ -248,12 +248,12 @@ export const SystemCheckView: React.FC<SystemCheckViewProps> = ({ showToast }) =
 
             <div className="space-y-2 pt-2">
               <button
-                onClick={handleRunReconciliation}
-                disabled={isRunningReconciliation}
-                className="w-full text-right py-2.5 px-3 bg-[#F8FAFC] hover:bg-blue-50/70 border border-[#E2EAF0] rounded-xl text-xs font-bold text-[#17354F] flex items-center justify-between transition-colors cursor-pointer"
+                disabled={true}
+                className="w-full text-right py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-400 flex items-center justify-between cursor-not-allowed opacity-60"
+                title="تم تعطيل فحص ومطابقة الوسائط مؤقتًا"
               >
-                <span>فحص ومطابقة الوسائط المفقودة</span>
-                <RefreshCw className={`w-3.5 h-3.5 text-[#064B82] ${isRunningReconciliation ? 'animate-spin' : ''}`} />
+                <span>فحص ومطابقة الوسائط المفقودة (معطل مؤقتًا)</span>
+                <RefreshCw className="w-3.5 h-3.5 text-gray-300" />
               </button>
 
               <button

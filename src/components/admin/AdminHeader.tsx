@@ -73,9 +73,9 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   const fetchNotifications = async () => {
     try {
       const list = await api.getNotifications();
-      setNotifications(list || []);
+      setNotifications(Array.isArray(list) ? list : []);
     } catch {
-      // ignore
+      setNotifications([]);
     }
   };
 
@@ -99,12 +99,13 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const safeNotifications = Array.isArray(notifications) ? notifications : [];
+  const unreadCount = safeNotifications.filter((n) => !n.isRead).length;
 
   const handleMarkAllRead = async () => {
     try {
       await api.markAllNotificationsRead();
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      setNotifications((prev) => (Array.isArray(prev) ? prev : []).map((n) => ({ ...n, isRead: true })));
     } catch (e) {
       console.error(e);
     }
@@ -114,7 +115,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
     if (!notif.isRead) {
       await api.markNotificationRead(notif.id).catch(() => {});
       setNotifications((prev) =>
-        prev.map((n) => (n.id === notif.id ? { ...n, isRead: true } : n))
+        (Array.isArray(prev) ? prev : []).map((n) => (n.id === notif.id ? { ...n, isRead: true } : n))
       );
     }
     setIsNotifOpen(false);
@@ -210,10 +211,10 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
               </div>
 
               <div className="max-h-80 overflow-y-auto space-y-1.5 custom-scrollbar">
-                {notifications.length === 0 ? (
+                {safeNotifications.length === 0 ? (
                   <p className="text-xs text-[#667788] text-center py-6">لا توجد إشعارات حالياً</p>
                 ) : (
-                  notifications.map((notif) => (
+                  safeNotifications.map((notif) => (
                     <div
                       key={notif.id}
                       onClick={() => handleNotificationClick(notif)}

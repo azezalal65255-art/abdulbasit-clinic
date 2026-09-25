@@ -339,13 +339,12 @@ export const MediaLibraryView: React.FC<MediaLibraryViewProps> = ({ showToast })
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={handleReconcile}
-            disabled={isReconciling}
-            className="inline-flex items-center gap-1.5 py-2 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-200 shadow-xs transition-colors cursor-pointer"
-            title="فحص ومطابقة جميع ملفات التخزين الفعلي مع قاعدة البيانات"
+            disabled={true}
+            className="inline-flex items-center gap-1.5 py-2 px-3 bg-gray-100 text-gray-400 text-xs font-bold rounded-xl border border-gray-200 shadow-xs cursor-not-allowed opacity-60"
+            title="تم تعطيل فحص ومطابقة جميع ملفات التخزين الفعلي مؤقتًا"
           >
-            <ShieldCheck className={`w-3.5 h-3.5 ${isReconciling ? 'animate-spin' : ''}`} />
-            {isReconciling ? 'جاري الفحص...' : 'فحص ومطابقة الوسائط'}
+            <ShieldCheck className="w-3.5 h-3.5" />
+            فحص ومطابقة الوسائط
           </button>
 
           {activeTab === 'trash' && mediaList.length > 0 && (
