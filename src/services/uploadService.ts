@@ -117,7 +117,7 @@ export async function uploadFile(
 
       return {
         downloadURL: resData.url || resData.downloadURL || resData.publicUrl,
-        storagePath: resData.storagePath || resData.storage_path || `media/${folder}/${uniqueName}`,
+        storagePath: (resData.storagePath || resData.storage_path || `${folder}/${uniqueName}`).replace(/^media\//, ''),
         fileName: resData.fileName || resData.file_name || uniqueName,
         originalName: resData.originalName || resData.original_name || file.name,
         contentType: resData.mimeType || resData.contentType || file.type,
@@ -133,7 +133,7 @@ export async function uploadFile(
 
     return {
       downloadURL,
-      storagePath: `media/${asciiPath}`,
+      storagePath: asciiPath,
       fileName: asciiSafeName,
       originalName: file.name,
       contentType: file.type,
@@ -149,7 +149,7 @@ export async function uploadFile(
 
   return {
     downloadURL,
-    storagePath: `media/${supabaseFilePath}`,
+    storagePath: supabaseFilePath,
     fileName: uniqueName,
     originalName: file.name,
     contentType: file.type,

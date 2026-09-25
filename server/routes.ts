@@ -26,6 +26,7 @@ import { reconcileMediaSystem, checkFileExists } from './mediaReconciliation';
 import {
   getLivePublicContent,
   syncEntityToSupabase,
+  syncDatabaseFromSupabase,
   getSupabaseDiagnosticStatus,
 } from './supabaseService';
 
@@ -41,6 +42,16 @@ apiRouter.get('/system/supabase-status', async (req: Request, res: Response) => 
     res.json(status);
   } catch (err: any) {
     res.status(500).json({ connected: false, error: err.message });
+  }
+});
+
+// Admin endpoint to manually pull fresh database state from Supabase
+apiRouter.post('/admin/sync-supabase', requireAuth, requireRole(['admin']), async (req: Request, res: Response) => {
+  try {
+    const result = await syncDatabaseFromSupabase();
+    res.json({ success: true, ...result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -630,12 +641,12 @@ apiRouter.get('/admin/doctor', requireAuth, (req: AuthenticatedRequest, res: Res
   res.json(db.get().doctor);
 });
 
-apiRouter.put('/admin/doctor', requireAuth, requireRole(['admin']), (req: AuthenticatedRequest, res: Response) => {
+apiRouter.put('/admin/doctor', requireAuth, requireRole(['admin']), async (req: AuthenticatedRequest, res: Response) => {
   const data = db.get();
   data.doctor = { ...data.doctor, ...req.body };
   db.logActivity(req.user!, 'تعديل بيانات الطبيب', 'بيانات الطبيب', 'تم تحديث النبذة والمؤهلات والخبرات الطبية');
   db.save();
-  syncEntityToSupabase('doctor', data.doctor).catch(() => {});
+  await syncEntityToSupabase('doctor', data.doctor);
   res.json({ success: true, doctor: data.doctor });
 });
 
@@ -648,7 +659,7 @@ apiRouter.get('/admin/services', requireAuth, (req: AuthenticatedRequest, res: R
   res.json(list);
 });
 
-apiRouter.post('/admin/services', requireAuth, requireRole(['admin', 'content_manager']), (req: AuthenticatedRequest, res: Response) => {
+apiRouter.post('/admin/services', requireAuth, requireRole(['admin', 'content_manager']), async (req: AuthenticatedRequest, res: Response) => {
   const { title, slug, description, fullDescription, iconName, image, features, metaTitle, metaDescription } = req.body;
   if (!title) return res.status(400).json({ error: 'عنوان الخدمة مطلوب' });
 
@@ -673,21 +684,27 @@ apiRouter.post('/admin/services', requireAuth, requireRole(['admin', 'content_ma
   data.services.push(newService);
   db.logActivity(req.user!, 'إضافة خدمة', 'الخدمات الطبية', `تمت إضافة خدمة جديدة: ${newService.title}`);
   db.save();
-  syncEntityToSupabase('service', newService).catch(() => {});
+  await syncEntityToSupabase('service', newService);
 
   res.status(201).json({ success: true, item: newService });
 });
 
-apiRouter.put('/admin/services/:id', requireAuth, requireRole(['admin', 'content_manager']), (req: AuthenticatedRequest, res: Response) => {
+apiRouter.put('/admin/services/:id', requireAuth, requireRole(['admin', 'content_manager']), async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;
   const data = db.get();
   const service = data.services.find((s) => s.id === id);
   if (!service) return res.status(404).json({ error: 'الخدمة غير موجودة' });
 
+  const rawImage = req.body.image || req.body.imageUrl;
+  if (rawImage) {
+    req.body.image = rawImage.trim();
+    req.body.imageUrl = rawImage.trim();
+  }
+
   Object.assign(service, req.body, { updatedAt: new Date().toISOString() });
   db.logActivity(req.user!, 'تعديل خدمة', 'الخدمات الطبية', `تم تعديل الخدمة: ${service.title}`);
   db.save();
-  syncEntityToSupabase('service', service).catch(() => {});
+  await syncEntityToSupabase('service', service);
 
   res.json({ success: true, item: service });
 });
@@ -722,7 +739,7 @@ apiRouter.get('/admin/conditions', requireAuth, (req: AuthenticatedRequest, res:
 });
 
 apiRouter.post('/admin/conditions', requireAuth, requireRole(['admin', 'content_manager']), (req: AuthenticatedRequest, res: Response) => {
-  const { name, slug, category, icon, description, symptoms, treatmentApproach, keywords, metaTitle, metaDescription } = req.body;
+  const { name, slug, category, icon, description, symptoms, treatmentApproach, keywords, metaTitle, metaDescription, image, imageUrl } = req.body;
   if (!name) return res.status(400).json({ error: 'اسم الحالة مطلوب' });
 
   const data = db.get();
@@ -732,6 +749,7 @@ apiRouter.post('/admin/conditions', requireAuth, requireRole(['admin', 'content_
     ? keywords.split(',').map((k: string) => k.trim()).filter(Boolean)
     : [];
 
+  const rawConditionImg = (image || imageUrl || '').trim();
   const newCond = {
     id: generateId('cond'),
     name: String(name).trim(),
@@ -739,6 +757,8 @@ apiRouter.post('/admin/conditions', requireAuth, requireRole(['admin', 'content_
     category: category || 'digestive',
     icon: icon || 'Flame',
     description: String(description || '').trim(),
+    image: rawConditionImg,
+    imageUrl: rawConditionImg,
     symptoms: Array.isArray(symptoms) ? symptoms : [],
     treatmentApproach: String(treatmentApproach || '').trim(),
     keywords: parsedKeywords,
@@ -763,6 +783,12 @@ apiRouter.put('/admin/conditions/:id', requireAuth, requireRole(['admin', 'conte
   const data = db.get();
   const cond = data.conditions.find((c) => c.id === id);
   if (!cond) return res.status(404).json({ error: 'الحالة غير موجودة' });
+
+  const rawImage = req.body.image || req.body.imageUrl;
+  if (rawImage) {
+    req.body.image = rawImage.trim();
+    req.body.imageUrl = rawImage.trim();
+  }
 
   Object.assign(cond, req.body, { updatedAt: new Date().toISOString() });
   db.logActivity(req.user!, 'تعديل حالة مرضية', 'الحالات المرضية', `تم تعديل الحالة: ${cond.name}`);
@@ -885,6 +911,12 @@ apiRouter.put('/admin/endoscopy/:id', requireAuth, requireRole(['admin', 'conten
   const endo = data.endoscopy.find((e) => e.id === id);
   if (!endo) return res.status(404).json({ error: 'إجراء المنظار غير موجود' });
 
+  const rawImage = req.body.image || req.body.imageUrl;
+  if (rawImage) {
+    req.body.image = rawImage.trim();
+    req.body.imageUrl = rawImage.trim();
+  }
+
   Object.assign(endo, req.body, { updatedAt: new Date().toISOString() });
   db.logActivity(req.user!, 'تعديل إجراء منظار', 'مناظير الجهاز الهضمي', `تم تعديل: ${endo.title}`);
   db.save();
@@ -1000,6 +1032,12 @@ apiRouter.put('/admin/articles/:id', requireAuth, requireRole(['admin', 'content
   const data = db.get();
   const article = data.articles.find((a) => a.id === id);
   if (!article) return res.status(404).json({ error: 'المقال غير موجود' });
+
+  const rawImage = req.body.image || req.body.imageUrl;
+  if (rawImage) {
+    req.body.image = rawImage.trim();
+    req.body.imageUrl = rawImage.trim();
+  }
 
   Object.assign(article, req.body, { updatedAt: new Date().toISOString() });
   db.logActivity(req.user!, 'تعديل مقال طبي', 'المقالات الطبية', `تم تعديل المقال: ${article.title}`);
@@ -1314,7 +1352,7 @@ apiRouter.get('/admin/media/health', requireAuth, (req: AuthenticatedRequest, re
 });
 
 apiRouter.post('/admin/media', requireAuth, requireRole(['admin', 'content_manager']), (req: AuthenticatedRequest, res: Response) => {
-  let { name, title, url, altText, fileSize, fileType, category, isVideo, youtubeUrl, youtubeId, duration } = req.body;
+  let { name, title, url, altText, fileSize, fileType, category, isVideo, youtubeUrl, youtubeId, duration, storage_path, storagePath } = req.body;
   const finalName = String(name || title || (isVideo ? 'فيديو طبي' : 'صورة طبية')).trim();
   if (!finalName || !url) return res.status(400).json({ error: 'اسم الملف ورابطه مطلوبان' });
 
@@ -1328,14 +1366,31 @@ apiRouter.post('/admin/media', requireAuth, requireRole(['admin', 'content_manag
   }
 
   const baseName = url ? path.basename(url) : '';
+  const cleanUrl = String(url).trim();
+
+  let computedStoragePath = (storage_path || storagePath || '').trim().replace(/^media\//, '');
+  if (!computedStoragePath && cleanUrl.includes('supabase.co/storage/')) {
+    const parts = cleanUrl.split('/media/');
+    if (parts[1]) {
+      computedStoragePath = parts[1].split('?')[0];
+    } else {
+      computedStoragePath = `${isVideo ? 'videos' : 'images'}/${baseName}`;
+    }
+  }
+  if (!computedStoragePath) {
+    computedStoragePath = `${isVideo ? 'videos' : 'images'}/${baseName}`;
+  }
+
   const newMedia = {
     id: generateId('med'),
     name: finalName,
     file_name: baseName,
     title: finalName,
-    storage_path: `data/uploads/${baseName}`,
-    public_url: String(url).trim(),
-    url: String(url).trim(),
+    storage_path: computedStoragePath,
+    storagePath: computedStoragePath,
+    public_url: cleanUrl,
+    publicUrl: cleanUrl,
+    url: cleanUrl,
     altText: String(altText || finalName).trim(),
     category: category || (isVideo ? 'فيديوهات طبية' : 'عيادة'),
     file_size: fileSize || (isVideo ? duration || '05:00' : '250 KB'),
@@ -1363,6 +1418,7 @@ apiRouter.post('/admin/media', requireAuth, requireRole(['admin', 'content_manag
   data.media.unshift(newMedia);
   db.logActivity(req.user!, 'رفع وسائط', 'الصور والوسائط', `تمت إضافة وسائط جديدة: ${newMedia.name}`);
   db.save();
+  syncEntityToSupabase('media', newMedia).catch(() => {});
 
   res.status(201).json({ success: true, item: newMedia });
 });
@@ -1456,6 +1512,7 @@ apiRouter.post('/admin/media/:id/replace', requireAuth, requireRole(['admin', 'c
   let newName = mediaItem.name;
   let newSize = mediaItem.fileSize;
   let newMime = mediaItem.fileType;
+  let newStorageKey = '';
 
   if (req.file) {
     const isVideo = req.file.mimetype.startsWith('video/');
@@ -1465,6 +1522,7 @@ apiRouter.post('/admin/media/:id/replace', requireAuth, requireRole(['admin', 'c
     const cleanName = req.file.originalname.replace(/[^a-zA-Z0-9_\-\.]/g, '_');
     const uniqueFileName = `${timestamp}-${randomSuffix}-${cleanName}`;
     const storageKey = `${folder}/${uniqueFileName}`;
+    newStorageKey = storageKey;
 
     try {
       const { createClient } = await import('@supabase/supabase-js');
@@ -1509,6 +1567,11 @@ apiRouter.post('/admin/media/:id/replace', requireAuth, requireRole(['admin', 'c
   // Update media item record
   mediaItem.url = newUrl;
   mediaItem.publicUrl = newUrl;
+  mediaItem.public_url = newUrl;
+  if (newStorageKey) {
+    mediaItem.storage_path = newStorageKey;
+    mediaItem.storagePath = newStorageKey;
+  }
   mediaItem.name = newName;
   mediaItem.title = newName;
   mediaItem.fileSize = newSize;
@@ -1523,16 +1586,19 @@ apiRouter.post('/admin/media/:id/replace', requireAuth, requireRole(['admin', 'c
   syncEntityToSupabase('doctor', data.doctor).catch(() => {});
   syncEntityToSupabase('settings', data.settings).catch(() => {});
   (data.services || []).forEach((srv) => {
-    if (srv.image === newUrl) syncEntityToSupabase('service', srv).catch(() => {});
+    if (srv.image === newUrl || srv.imageUrl === newUrl) syncEntityToSupabase('service', srv).catch(() => {});
+  });
+  (data.conditions || []).forEach((cond) => {
+    if (cond.image === newUrl || cond.imageUrl === newUrl) syncEntityToSupabase('condition', cond).catch(() => {});
   });
   (data.sliders || []).forEach((sld) => {
     if (sld.image === newUrl || sld.imageUrl === newUrl) syncEntityToSupabase('slider', sld).catch(() => {});
   });
   (data.articles || []).forEach((art) => {
-    if (art.image === newUrl) syncEntityToSupabase('article', art).catch(() => {});
+    if (art.image === newUrl || art.imageUrl === newUrl) syncEntityToSupabase('article', art).catch(() => {});
   });
   (data.endoscopy || []).forEach((endo) => {
-    if (endo.image === newUrl) syncEntityToSupabase('endoscopy', endo).catch(() => {});
+    if (endo.image === newUrl || endo.imageUrl === newUrl) syncEntityToSupabase('endoscopy', endo).catch(() => {});
   });
 
   db.logActivity(

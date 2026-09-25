@@ -24,8 +24,13 @@ export {
   sanitizeAndPersistMediaUrls,
 };
 
+import crypto from 'crypto';
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://rmvhgoewsegyohdbsjsd.supabase.co';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_yROJ40jpb1d5RdyfJ3zeRQ_hfN_VmPu';
+const supabaseKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.SUPABASE_ANON_KEY ||
+  process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  'sb_publishable_yROJ40jpb1d5RdyfJ3zeRQ_hfN_VmPu';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Multer memory storage so files can be uploaded directly to Supabase Storage
@@ -51,7 +56,7 @@ export const handleUploadFile = async (req: Request, res: Response) => {
     const isVideo = req.file.mimetype.startsWith('video/');
     const folder = isVideo ? 'videos' : 'images';
     const timestamp = Date.now();
-    const randomSuffix = Math.random().toString(36).substring(2, 7);
+    const randomSuffix = crypto.randomUUID().slice(0, 8);
     const cleanName = req.file.originalname.replace(/[^a-zA-Z0-9_\-\.]/g, '_');
     const uniqueFileName = `${timestamp}-${randomSuffix}-${cleanName}`;
     const storageKey = `${folder}/${uniqueFileName}`;
@@ -89,7 +94,10 @@ export const handleUploadFile = async (req: Request, res: Response) => {
           name: displayName,
           title: displayName,
           url: publicUrl,
-          storagePath: `media/${storageKey}`,
+          public_url: publicUrl,
+          publicUrl: publicUrl,
+          storage_path: storageKey,
+          storagePath: storageKey,
           altText: displayName,
           category: req.body?.category || 'عيادة',
           fileSize: `${Math.round(req.file.size / 1024)} KB`,
@@ -112,8 +120,8 @@ export const handleUploadFile = async (req: Request, res: Response) => {
         public_url: publicUrl,
         publicUrl: publicUrl,
         downloadURL: publicUrl,
-        storage_path: `media/${storageKey}`,
-        storagePath: `media/${storageKey}`,
+        storage_path: storageKey,
+        storagePath: storageKey,
         fileName: uniqueFileName,
         file_name: uniqueFileName,
         originalName: displayName,

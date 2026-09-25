@@ -71,6 +71,8 @@ CREATE TABLE IF NOT EXISTS public.conditions (
   category TEXT,
   icon TEXT,
   description TEXT,
+  image TEXT,
+  image_url TEXT,
   symptoms JSONB DEFAULT '[]'::jsonb,
   treatment_approach TEXT,
   is_active BOOLEAN DEFAULT TRUE,
@@ -437,9 +439,9 @@ CREATE TABLE IF NOT EXISTS public.recycle_bin (
 );
 
 -- =========================================================================
--- ROW LEVEL SECURITY (RLS) POLICIES
+-- ROW LEVEL SECURITY (RLS) POLICIES FOR DATABASE TABLES
 -- Allows public reads for active published website content
--- Allows authenticated/backend management
+-- Allows authenticated/backend management for all operations
 -- =========================================================================
 
 DO $$
@@ -453,6 +455,38 @@ BEGIN
     EXECUTE format('DROP POLICY IF EXISTS "Public Read All" ON public.%I;', tbl);
     EXECUTE format('CREATE POLICY "Public Read All" ON public.%I FOR SELECT USING (true);', tbl);
     EXECUTE format('DROP POLICY IF EXISTS "Anon Insert Manage" ON public.%I;', tbl);
-    EXECUTE format('CREATE POLICY "Anon Insert Manage" ON public.%I FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);', tbl);
+    EXECUTE format('CREATE POLICY "Anon Insert Manage" ON public.%I FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);', tbl);
   END LOOP;
 END $$;
+
+-- =========================================================================
+-- STORAGE CONFIGURATION & RLS POLICIES FOR SUPABASE STORAGE ('media' BUCKET)
+-- =========================================================================
+
+-- 1. Ensure 'media' bucket exists and is set to public
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'media',
+  'media',
+  true,
+  26214400, -- 25MB
+  ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml', 'image/x-icon', 'video/mp4', 'video/webm', 'application/pdf']
+)
+ON CONFLICT (id) DO UPDATE SET
+  public = true,
+  file_size_limit = 26214400;
+
+-- 2. Drop any legacy restrictive policies
+DROP POLICY IF EXISTS "Public Select media" ON storage.objects;
+DROP POLICY IF EXISTS "Public Insert media" ON storage.objects;
+DROP POLICY IF EXISTS "Public Update media" ON storage.objects;
+DROP POLICY IF EXISTS "Public Delete media" ON storage.objects;
+DROP POLICY IF EXISTS "Allow All to media bucket" ON storage.objects;
+
+-- 3. Create full access policy for media bucket (SELECT, INSERT, UPDATE, DELETE)
+CREATE POLICY "Allow All to media bucket" ON storage.objects
+FOR ALL
+TO anon, authenticated, service_role
+USING (bucket_id = 'media')
+WITH CHECK (bucket_id = 'media');
+

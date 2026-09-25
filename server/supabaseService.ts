@@ -62,12 +62,29 @@ export async function checkTableExists(tableName: string): Promise<boolean> {
   }
 }
 
+const SUPABASE_MEDIA_BASE_URL = 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/';
+
 function resolveServerImageUrl(...candidates: any[]): string {
+  // 1. First priority: any Supabase Storage URL
   const supabaseUrl = candidates.find(
     (val) => typeof val === 'string' && val.includes('supabase.co/storage/')
   );
-  if (supabaseUrl) return supabaseUrl.trim();
+  if (supabaseUrl && typeof supabaseUrl === 'string') return supabaseUrl.trim();
 
+  // 2. Second priority: storage path
+  for (const c of candidates) {
+    if (typeof c === 'string' && c.trim()) {
+      const trimmed = c.trim();
+      if (trimmed.startsWith('images/') || trimmed.startsWith('videos/')) {
+        return `${SUPABASE_MEDIA_BASE_URL}${trimmed}`;
+      }
+      if (trimmed.startsWith('media/images/') || trimmed.startsWith('media/videos/')) {
+        return `${SUPABASE_MEDIA_BASE_URL}${trimmed.replace(/^media\//, '')}`;
+      }
+    }
+  }
+
+  // 3. Third priority: valid non-blob, non-data URL
   const valid = candidates.find(
     (val) => typeof val === 'string' && val.trim() !== '' && !val.startsWith('blob:') && !val.startsWith('data:')
   );
@@ -180,20 +197,25 @@ export async function getLivePublicContent() {
     }
 
     if (condRes.status === 'fulfilled' && condRes.value.data && condRes.value.data.length > 0) {
-      conditions = condRes.value.data.map((c: any) => ({
-        id: c.id,
-        name: c.name,
-        slug: c.slug,
-        category: c.category,
-        icon: c.icon,
-        description: c.description,
-        symptoms: c.symptoms || [],
-        treatmentApproach: c.treatment_approach || '',
-        isActive: c.is_active !== false,
-        order: c.order || 0,
-        createdAt: c.created_at,
-        updatedAt: c.updated_at,
-      }));
+      conditions = condRes.value.data.map((c: any) => {
+        const resolvedImg = resolveServerImageUrl(c.image, c.image_url);
+        return {
+          id: c.id,
+          name: c.name,
+          slug: c.slug,
+          category: c.category,
+          icon: c.icon,
+          description: c.description,
+          image: resolvedImg,
+          imageUrl: resolvedImg,
+          symptoms: c.symptoms || [],
+          treatmentApproach: c.treatment_approach || '',
+          isActive: c.is_active !== false,
+          order: c.order || 0,
+          createdAt: c.created_at,
+          updatedAt: c.updated_at,
+        };
+      });
     }
 
     if (endoRes.status === 'fulfilled' && endoRes.value.data && endoRes.value.data.length > 0) {
@@ -493,19 +515,241 @@ export async function getLivePublicContent() {
 }
 
 /**
- * Persist and propagate any entity update or image update to Supabase PostgreSQL immediately.
+ * Bidirectionally synchronize local database from Supabase PostgreSQL.
+ * Guarantees rule: Supabase Database > Default content.
+ * Any record present in Supabase overrides default local memory state.
  */
-export async function syncEntityToSupabase(entityType: string, data: any) {
+export async function syncDatabaseFromSupabase(): Promise<{ synced: boolean; tables: string[] }> {
+  const local = db.get();
+  const syncedTables: string[] = [];
+
   try {
+    // 1. Doctor Profile
+    const { data: docData, error: docErr } = await supabase.from('doctor').select('*').limit(1).maybeSingle();
+    if (!docErr && docData) {
+      local.doctor = {
+        name: docData.name || local.doctor.name,
+        title: docData.title || local.doctor.title,
+        jobTitle: docData.job_title || local.doctor.jobTitle,
+        bio: docData.bio || local.doctor.bio,
+        photo: resolveServerImageUrl(docData.photo, local.doctor.photo),
+        experiences: docData.experiences || local.doctor.experiences,
+        qualifications: docData.qualifications || local.doctor.qualifications,
+      };
+      syncedTables.push('doctor');
+    }
+
+    // 2. Services
+    const { data: srvData, error: srvErr } = await supabase.from('services').select('*').order('order', { ascending: true });
+    if (!srvErr && srvData && srvData.length > 0) {
+      local.services = srvData.map((s: any) => {
+        const resolvedImg = resolveServerImageUrl(s.image);
+        return {
+          id: s.id,
+          title: s.title,
+          slug: s.slug,
+          description: s.description,
+          fullDescription: s.full_description || s.description,
+          iconName: s.icon_name || 'Activity',
+          image: resolvedImg,
+          imageUrl: resolvedImg,
+          features: s.features || [],
+          metaTitle: s.meta_title,
+          metaDescription: s.meta_description,
+          isActive: s.is_active !== false,
+          order: s.order || 0,
+          createdAt: s.created_at,
+          updatedAt: s.updated_at,
+        };
+      });
+      syncedTables.push('services');
+    }
+
+    // 3. Conditions
+    const { data: condData, error: condErr } = await supabase.from('conditions').select('*').order('order', { ascending: true });
+    if (!condErr && condData && condData.length > 0) {
+      local.conditions = condData.map((c: any) => {
+        const resolvedImg = resolveServerImageUrl(c.image, c.image_url);
+        return {
+          id: c.id,
+          name: c.name,
+          slug: c.slug,
+          category: c.category,
+          icon: c.icon,
+          description: c.description,
+          image: resolvedImg,
+          imageUrl: resolvedImg,
+          symptoms: c.symptoms || [],
+          treatmentApproach: c.treatment_approach || '',
+          isActive: c.is_active !== false,
+          order: c.order || 0,
+          createdAt: c.created_at,
+          updatedAt: c.updated_at,
+        };
+      });
+      syncedTables.push('conditions');
+    }
+
+    // 4. Endoscopy
+    const { data: endoData, error: endoErr } = await supabase.from('endoscopy').select('*').order('order', { ascending: true });
+    if (!endoErr && endoData && endoData.length > 0) {
+      local.endoscopy = endoData.map((e: any) => {
+        const resolvedImg = resolveServerImageUrl(e.image);
+        return {
+          id: e.id,
+          title: e.title,
+          slug: e.slug,
+          description: e.description,
+          image: resolvedImg,
+          imageUrl: resolvedImg,
+          indications: e.indications || [],
+          duration: e.duration,
+          prepSummary: e.prep_summary || '',
+          preInstructions: e.pre_instructions || [],
+          postInstructions: e.post_instructions || [],
+          isActive: e.is_active !== false,
+          order: e.order || 0,
+          createdAt: e.created_at,
+          updatedAt: e.updated_at,
+        };
+      });
+      syncedTables.push('endoscopy');
+    }
+
+    // 5. Articles
+    const { data: artData, error: artErr } = await supabase.from('articles').select('*').order('created_at', { ascending: false });
+    if (!artErr && artData && artData.length > 0) {
+      local.articles = artData.map((a: any) => {
+        const resolvedImg = resolveServerImageUrl(a.image);
+        return {
+          id: a.id,
+          title: a.title,
+          slug: a.slug,
+          excerpt: a.excerpt,
+          content: a.content,
+          category: a.category,
+          author: a.author,
+          readTime: a.read_time || '3 دقائق',
+          date: a.date,
+          image: resolvedImg,
+          imageUrl: resolvedImg,
+          tags: a.tags || [],
+          metaTitle: a.meta_title,
+          metaDescription: a.meta_description,
+          status: a.status || 'published',
+          views: a.views || 0,
+          keywords: a.keywords ? (Array.isArray(a.keywords) ? a.keywords : a.keywords.split(',')) : [],
+          isDeleted: a.is_deleted === true,
+          createdAt: a.created_at,
+          updatedAt: a.updated_at,
+        };
+      });
+      syncedTables.push('articles');
+    }
+
+    // 6. Sliders
+    const { data: sldData, error: sldErr } = await supabase.from('sliders').select('*').order('order', { ascending: true });
+    if (!sldErr && sldData && sldData.length > 0) {
+      local.sliders = sldData.map((s: any) => {
+        const resolvedImg = resolveServerImageUrl(s.image, s.image_url);
+        return {
+          id: s.id,
+          title: s.title,
+          subtitle: s.subtitle,
+          description: s.description,
+          image: resolvedImg,
+          imageUrl: resolvedImg,
+          badgeText: s.badge_text,
+          buttonText: s.button_text,
+          buttonLink: s.button_link,
+          secondaryButtonText: s.secondary_button_text,
+          secondaryButtonLink: s.secondary_button_link,
+          order: s.order || 0,
+          isActive: s.is_active !== false,
+          createdAt: s.created_at,
+          updatedAt: s.updated_at,
+        };
+      });
+      syncedTables.push('sliders');
+    }
+
+    // 7. Settings
+    const { data: setData, error: setErr } = await supabase.from('settings').select('*').limit(1).maybeSingle();
+    if (!setErr && setData) {
+      local.settings = {
+        ...local.settings,
+        siteName: setData.site_name || local.settings.siteName,
+        clinicName: setData.clinic_name || local.settings.clinicName,
+        doctorName: setData.doctor_name || local.settings.doctorName,
+        doctorSpecialty: setData.doctor_specialty || local.settings.doctorSpecialty,
+        logoUrl: resolveServerImageUrl(setData.logo_url, local.settings.logoUrl),
+        faviconUrl: setData.favicon_url || local.settings.faviconUrl,
+        heroBadge: setData.hero_badge || local.settings.heroBadge,
+        heroHeadline: setData.hero_headline || local.settings.heroHeadline,
+        heroSubheadline: setData.hero_subheadline || local.settings.heroSubheadline,
+        bookButtonText: setData.book_button_text || local.settings.bookButtonText,
+        contactButtonText: setData.contact_button_text || local.settings.contactButtonText,
+        defaultWhatsAppText: setData.default_whats_app_text || local.settings.defaultWhatsAppText,
+        maintenanceMode: setData.maintenance_mode === true,
+        footerCopyright: setData.footer_copyright || local.settings.footerCopyright,
+        whatsappNumber: setData.whatsapp_number || local.settings.whatsappNumber,
+        heroDoctorPhoto: resolveServerImageUrl(setData.hero_doctor_photo, local.settings.heroDoctorPhoto),
+      };
+      syncedTables.push('settings');
+    }
+
+    // 8. Media
+    const { data: medData, error: medErr } = await supabase.from('media').select('*').order('created_at', { ascending: false });
+    if (!medErr && medData && medData.length > 0) {
+      local.media = medData.map((m: any) => ({
+        id: m.id,
+        name: m.name,
+        title: m.title || m.name,
+        url: m.url || m.public_url,
+        publicUrl: m.public_url || m.url,
+        storagePath: m.storage_path,
+        fileType: m.file_type || m.mime_type,
+        mimeType: m.mime_type || m.file_type,
+        fileSize: typeof m.file_size === 'number' ? `${Math.round(m.file_size / 1024)} KB` : m.file_size,
+        category: m.category || 'general',
+        altText: m.alt_text || m.name,
+        status: m.status || 'active',
+        createdAt: m.created_at,
+        updatedAt: m.updated_at,
+      }));
+      syncedTables.push('media');
+    }
+
+    if (syncedTables.length > 0) {
+      db.save();
+      console.log(`[Supabase Source-of-Truth] Successfully synced ${syncedTables.length} tables:`, syncedTables.join(', '));
+      return { synced: true, tables: syncedTables };
+    }
+  } catch (err) {
+    console.warn('[Supabase Sync Warning]: Could not fetch remote tables, using synchronized local store.', err);
+  }
+
+  return { synced: false, tables: [] };
+}
+
+/**
+ * Persist and propagate any entity update or image update to Supabase PostgreSQL immediately.
+ * Returns { success: boolean, error?: string } for strict verification.
+ */
+export async function syncEntityToSupabase(entityType: string, data: any): Promise<{ success: boolean; error?: string }> {
+  try {
+    let result: any;
+
     switch (entityType) {
       case 'doctor':
-        await supabase.from('doctor').upsert({
+        const doctorPhoto = resolveServerImageUrl(data.photo);
+        result = await supabase.from('doctor').upsert({
           id: 'doctor_profile',
           name: data.name,
           title: data.title,
           job_title: data.jobTitle,
           bio: data.bio,
-          photo: data.photo,
+          photo: doctorPhoto,
           experiences: data.experiences,
           qualifications: data.qualifications,
           updated_at: new Date().toISOString(),
@@ -513,14 +757,15 @@ export async function syncEntityToSupabase(entityType: string, data: any) {
         break;
 
       case 'service':
-        await supabase.from('services').upsert({
+        const serviceImg = resolveServerImageUrl(data.image, data.imageUrl);
+        result = await supabase.from('services').upsert({
           id: data.id,
           title: data.title,
           slug: data.slug || data.id,
           description: data.description,
           full_description: data.fullDescription,
           icon_name: data.iconName,
-          image: data.image,
+          image: serviceImg,
           features: data.features,
           meta_title: data.metaTitle,
           meta_description: data.metaDescription,
@@ -531,13 +776,14 @@ export async function syncEntityToSupabase(entityType: string, data: any) {
         break;
 
       case 'slider':
-        await supabase.from('sliders').upsert({
+        const sliderImg = resolveServerImageUrl(data.image, data.imageUrl);
+        result = await supabase.from('sliders').upsert({
           id: data.id,
           title: data.title,
           subtitle: data.subtitle,
           description: data.description,
-          image: data.image || data.imageUrl,
-          image_url: data.imageUrl || data.image,
+          image: sliderImg,
+          image_url: sliderImg,
           badge_text: data.badgeText,
           button_text: data.buttonText,
           button_link: data.buttonLink,
@@ -550,7 +796,8 @@ export async function syncEntityToSupabase(entityType: string, data: any) {
         break;
 
       case 'article':
-        await supabase.from('articles').upsert({
+        const articleImg = resolveServerImageUrl(data.image, data.imageUrl);
+        result = await supabase.from('articles').upsert({
           id: data.id,
           title: data.title,
           slug: data.slug || data.id,
@@ -560,7 +807,7 @@ export async function syncEntityToSupabase(entityType: string, data: any) {
           author: data.author,
           read_time: data.readTime,
           date: data.date,
-          image: data.image,
+          image: articleImg,
           tags: data.tags,
           meta_title: data.metaTitle,
           meta_description: data.metaDescription,
@@ -573,12 +820,13 @@ export async function syncEntityToSupabase(entityType: string, data: any) {
         break;
 
       case 'endoscopy':
-        await supabase.from('endoscopy').upsert({
+        const endoscopyImg = resolveServerImageUrl(data.image, data.imageUrl);
+        result = await supabase.from('endoscopy').upsert({
           id: data.id,
           title: data.title,
           slug: data.slug || data.id,
           description: data.description,
-          image: data.image,
+          image: endoscopyImg,
           indications: data.indications,
           duration: data.duration,
           prep_summary: data.prepSummary,
@@ -591,13 +839,16 @@ export async function syncEntityToSupabase(entityType: string, data: any) {
         break;
 
       case 'condition':
-        await supabase.from('conditions').upsert({
+        const conditionImg = resolveServerImageUrl(data.image, data.imageUrl);
+        result = await supabase.from('conditions').upsert({
           id: data.id,
           name: data.name,
           slug: data.slug || data.id,
           category: data.category,
           icon: data.icon,
           description: data.description,
+          image: conditionImg,
+          image_url: conditionImg,
           symptoms: data.symptoms,
           treatment_approach: data.treatmentApproach,
           is_active: data.isActive !== false,
@@ -607,14 +858,19 @@ export async function syncEntityToSupabase(entityType: string, data: any) {
         break;
 
       case 'media':
-        await supabase.from('media').upsert({
+        const mediaUrl = resolveServerImageUrl(data.url, data.publicUrl);
+        const cleanStoragePath = (data.storagePath || data.storage_path || '')
+          .replace(/^media\//, '')
+          .replace(/^data\/uploads\//, 'images/')
+          .replace(/^\/uploads\//, 'images/');
+        result = await supabase.from('media').upsert({
           id: data.id,
           name: data.name || data.title,
           title: data.title || data.name,
-          file_name: data.fileName || data.name,
-          storage_path: data.storagePath,
-          public_url: data.url || data.publicUrl,
-          url: data.url || data.publicUrl,
+          file_name: data.fileName || data.file_name || data.name,
+          storage_path: cleanStoragePath,
+          public_url: mediaUrl,
+          url: mediaUrl,
           file_type: data.fileType || data.mimeType,
           mime_type: data.mimeType || data.fileType,
           file_size: typeof data.fileSize === 'number' ? data.fileSize : 0,
@@ -626,13 +882,15 @@ export async function syncEntityToSupabase(entityType: string, data: any) {
         break;
 
       case 'settings':
-        await supabase.from('settings').upsert({
+        const logoUrl = resolveServerImageUrl(data.logoUrl);
+        const heroDoctorPhoto = resolveServerImageUrl(data.heroDoctorPhoto);
+        result = await supabase.from('settings').upsert({
           id: 'site_settings',
           site_name: data.siteName,
           clinic_name: data.clinicName,
           doctor_name: data.doctorName,
           doctor_specialty: data.doctorSpecialty,
-          logo_url: data.logoUrl,
+          logo_url: logoUrl,
           favicon_url: data.faviconUrl,
           hero_badge: data.heroBadge,
           hero_headline: data.heroHeadline,
@@ -643,7 +901,7 @@ export async function syncEntityToSupabase(entityType: string, data: any) {
           maintenance_mode: data.maintenanceMode === true,
           footer_copyright: data.footerCopyright,
           whatsapp_number: data.whatsappNumber,
-          hero_doctor_photo: data.heroDoctorPhoto,
+          hero_doctor_photo: heroDoctorPhoto,
           updated_at: new Date().toISOString(),
         });
         break;
@@ -651,8 +909,16 @@ export async function syncEntityToSupabase(entityType: string, data: any) {
       default:
         break;
     }
-  } catch (err) {
+
+    if (result && result.error) {
+      console.warn(`[Supabase Entity Sync Error (${entityType})]:`, result.error.message);
+      return { success: false, error: result.error.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
     console.warn(`[Supabase Entity Sync Warning (${entityType})]:`, err);
+    return { success: false, error: err.message };
   }
 }
 
@@ -680,9 +946,13 @@ export async function getSupabaseDiagnosticStatus() {
       if (supaMedia && supaMedia.length > 0) {
         mediaCount = supaMedia.length;
         latestMediaItem = {
+          id: supaMedia[0].id || 'supa_latest',
           name: supaMedia[0].name,
           url: supaMedia[0].url || supaMedia[0].public_url,
           storagePath: supaMedia[0].storage_path,
+          fileType: 'image/jpeg',
+          fileSize: '250 KB',
+          altText: supaMedia[0].name,
           createdAt: supaMedia[0].created_at,
           updatedAt: supaMedia[0].updated_at,
         };
@@ -695,9 +965,13 @@ export async function getSupabaseDiagnosticStatus() {
         isConnected = true;
         if (files.length > 0) {
           latestMediaItem = {
+            id: 'supa_file_latest',
             name: files[0].name,
             url: `${supabaseUrl}/storage/v1/object/public/media/images/${files[0].name}`,
-            storagePath: `media/images/${files[0].name}`,
+            storagePath: `images/${files[0].name}`,
+            fileType: 'image/jpeg',
+            fileSize: '250 KB',
+            altText: files[0].name,
             createdAt: files[0].created_at,
             updatedAt: files[0].updated_at,
           };

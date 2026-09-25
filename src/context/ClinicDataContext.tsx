@@ -196,15 +196,21 @@ export function ClinicDataProvider({ children }: { children: ReactNode }) {
               })
             : prev.services,
           conditions: res.conditions?.length
-            ? res.conditions.map((c: any) => ({
-                id: c.id,
-                name: c.name,
-                category: c.category || 'digestive',
-                icon: c.icon || 'Flame',
-                description: c.description,
-                symptoms: c.symptoms || [],
-                treatmentApproach: c.treatmentApproach || '',
-              }))
+            ? res.conditions.map((c: any) => {
+                const img = resolveImageUrl(c, '');
+                return {
+                  id: c.id,
+                  name: c.name,
+                  category: c.category || 'digestive',
+                  icon: c.icon || 'Flame',
+                  description: c.description,
+                  shortSummary: c.shortSummary || c.description,
+                  image: img,
+                  imageUrl: img,
+                  symptoms: c.symptoms || [],
+                  treatmentApproach: c.treatmentApproach || '',
+                };
+              })
             : prev.conditions,
           endoscopy: res.endoscopy?.length
             ? res.endoscopy.map((e: any) => {
@@ -292,7 +298,6 @@ export function ClinicDataProvider({ children }: { children: ReactNode }) {
               snapchat: res.contact?.snapchat || prev.contact.social.snapchat,
             },
           },
-          settings: res.settings || prev.settings,
         }));
       }
     } catch (err) {

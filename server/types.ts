@@ -37,6 +37,7 @@ export interface MedicalServiceItem {
   fullDescription: string;
   iconName: string;
   image: string;
+  imageUrl?: string;
   features: string[];
   metaTitle: string;
   metaDescription: string;
@@ -84,6 +85,7 @@ export interface MedicalConditionItem {
   relatedArticles?: string[];
   keywords?: string[];
   image?: string;
+  imageUrl?: string;
   metaTitle?: string;
   metaDescription?: string;
   isActive: boolean;
@@ -100,6 +102,7 @@ export interface EndoscopyItem {
   slug: string;
   description: string;
   image: string;
+  imageUrl?: string;
   indications: string[];
   duration: string;
   prepSummary: string;
@@ -133,6 +136,7 @@ export interface ArticleItem {
   readTime: string;
   date: string;
   image: string;
+  imageUrl?: string;
   tags: string[];
   keywords?: string[];
   metaTitle?: string;
@@ -326,6 +330,7 @@ export interface SliderItem {
   title: string;
   subtitle: string;
   description?: string;
+  image?: string;
   imageUrl: string;
   buttonText?: string;
   buttonLink?: string;
@@ -342,7 +347,9 @@ export interface MediaItem {
   file_name?: string;
   title?: string;
   storage_path?: string;
+  storagePath?: string;
   public_url?: string;
+  publicUrl?: string;
   url: string;
   file_type?: string;
   fileType: string;
@@ -354,7 +361,7 @@ export interface MediaItem {
   status?: 'active' | 'trash';
   deleted_at?: string | null;
   deletedAt?: string | null;
-  uploadedAt: string;
+  uploadedAt?: string;
   createdAt?: string;
   created_at?: string;
   updatedAt?: string;

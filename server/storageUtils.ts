@@ -298,32 +298,36 @@ export function replaceMediaUrlGlobally(oldUrl: string, newUrl: string, data: an
   }
 
   (data.services || []).forEach((item: any) => {
-    if (item.image === targetOld) {
+    if (item.image === targetOld || item.imageUrl === targetOld) {
       item.image = targetNew;
+      item.imageUrl = targetNew;
       count++;
       places.push(`خدمة: ${item.title}`);
     }
   });
 
   (data.conditions || []).forEach((item: any) => {
-    if (item.image === targetOld) {
+    if (item.image === targetOld || item.imageUrl === targetOld) {
       item.image = targetNew;
+      item.imageUrl = targetNew;
       count++;
       places.push(`حالة مرضية: ${item.name}`);
     }
   });
 
   (data.endoscopy || []).forEach((item: any) => {
-    if (item.image === targetOld) {
+    if (item.image === targetOld || item.imageUrl === targetOld) {
       item.image = targetNew;
+      item.imageUrl = targetNew;
       count++;
       places.push(`منظار: ${item.title}`);
     }
   });
 
   (data.articles || []).forEach((item: any) => {
-    if (item.image === targetOld) {
+    if (item.image === targetOld || item.imageUrl === targetOld) {
       item.image = targetNew;
+      item.imageUrl = targetNew;
       count++;
       places.push(`مقال: ${item.title}`);
     }
@@ -456,6 +460,35 @@ export function sanitizeAndPersistMediaUrls<T>(input: T, keyContext = ''): T {
     for (const [key, value] of Object.entries(input)) {
       sanitizedObj[key] = sanitizeAndPersistMediaUrls(value, key);
     }
+
+    // Rule 3: If image contains Supabase URL and imageUrl has legacy path, sync imageUrl = image
+    if (sanitizedObj.image && typeof sanitizedObj.image === 'string' && sanitizedObj.image.includes('supabase.co/storage/')) {
+      sanitizedObj.imageUrl = sanitizedObj.image;
+    } else if (sanitizedObj.imageUrl && typeof sanitizedObj.imageUrl === 'string' && sanitizedObj.imageUrl.includes('supabase.co/storage/')) {
+      sanitizedObj.image = sanitizedObj.imageUrl;
+    }
+
+    // Rule 4: For media library items:
+    // url = Supabase full URL, public_url = Supabase full URL
+    // storage_path = path inside bucket only (e.g. images/file.jpg)
+    if (sanitizedObj.storage_path || sanitizedObj.storagePath || (sanitizedObj.url && sanitizedObj.fileType)) {
+      const mediaUrl = sanitizedObj.url || sanitizedObj.public_url || sanitizedObj.publicUrl;
+      if (typeof mediaUrl === 'string' && mediaUrl.includes('supabase.co/storage/')) {
+        sanitizedObj.url = mediaUrl;
+        sanitizedObj.public_url = mediaUrl;
+        sanitizedObj.publicUrl = mediaUrl;
+        const currentPath = sanitizedObj.storage_path || sanitizedObj.storagePath;
+        if (typeof currentPath === 'string' && currentPath.trim()) {
+          const cleanPath = currentPath.trim()
+            .replace(/^media\//, '')
+            .replace(/^data\/uploads\//, 'images/')
+            .replace(/^\/uploads\//, 'images/');
+          sanitizedObj.storage_path = cleanPath;
+          sanitizedObj.storagePath = cleanPath;
+        }
+      }
+    }
+
     return sanitizedObj as T;
   }
 

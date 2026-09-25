@@ -6,6 +6,7 @@ import { createServer as createViteServer } from 'vite';
 import { apiRouter } from './server/routes';
 import { db } from './server/db';
 import { reconcileMediaSystem } from './server/mediaReconciliation';
+import { syncDatabaseFromSupabase } from './server/supabaseService';
 import {
   ensureDirectories,
   DATA_UPLOADS_DIR,
@@ -28,6 +29,19 @@ async function startServer() {
     console.log(`[Storage Reconciled] Discovered: ${report.orphanedFilesDiscovered}, Total media: ${report.totalMediaInDb}, Physical files: ${report.totalPhysicalFiles}`);
   } catch (reconcileErr) {
     console.error('Error during media reconciliation:', reconcileErr);
+  }
+
+  // Guaranteed Source-of-Truth Sync: pull all latest models from Supabase PostgreSQL on startup
+  try {
+    console.log('[Supabase Source-of-Truth] Synchronizing latest records on boot...');
+    const syncRes = await syncDatabaseFromSupabase();
+    if (syncRes.synced) {
+      console.log(`[Supabase Source-of-Truth] Successfully pulled latest content from tables: ${syncRes.tables.join(', ')}`);
+    } else {
+      console.log('[Supabase Source-of-Truth] Remote tables pending or using persistent database.');
+    }
+  } catch (supaBootErr) {
+    console.warn('[Supabase Source-of-Truth Warning]: Boot sync skipped due to:', supaBootErr);
   }
 
   // Statically serve uploads folder directly from persistent storage and public/dist
