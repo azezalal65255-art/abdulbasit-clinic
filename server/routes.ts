@@ -23,8 +23,26 @@ import {
   syncFileToDist,
 } from './storageUtils';
 import { reconcileMediaSystem, checkFileExists } from './mediaReconciliation';
+import {
+  getLivePublicContent,
+  syncEntityToSupabase,
+  getSupabaseDiagnosticStatus,
+} from './supabaseService';
 
 export const apiRouter = express.Router();
+
+// Diagnostic endpoint to verify live Supabase connectivity and status
+apiRouter.get('/system/supabase-status', async (req: Request, res: Response) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  try {
+    const status = await getSupabaseDiagnosticStatus();
+    res.json(status);
+  } catch (err: any) {
+    res.status(500).json({ connected: false, error: err.message });
+  }
+});
 
 // IMPORTANT:
 // Upload the original image file only.
@@ -46,27 +64,39 @@ apiRouter.post('/admin/upload', handleMulterUpload, handleUploadFile);
    PUBLIC API ENDPOINTS (For Visitors & Website)
    ========================================================================== */
 
-// Get all published website content in one fast request
-apiRouter.get('/public/content', (req: Request, res: Response) => {
-  const data = db.get();
-  res.json({
-    doctor: data.doctor,
-    services: data.services.filter((s) => s.isActive && !s.isDeleted).sort((a, b) => a.order - b.order),
-    conditions: data.conditions.filter((c) => c.isActive && !c.isDeleted).sort((a, b) => a.order - b.order),
-    endoscopy: data.endoscopy.filter((e) => e.isActive && !e.isDeleted).sort((a, b) => a.order - b.order),
-    articles: data.articles.filter((a) => a.status === 'published' && !a.isDeleted),
-    pages: (data.pages || []).filter((p) => p.isActive && !p.isDeleted).sort((a, b) => a.order - b.order),
-    faqs: data.faqs.filter((f) => f.isActive && !f.isDeleted).sort((a, b) => a.order - b.order),
-    videos: (data.videos || []).filter((v) => v.isActive && !v.isDeleted).sort((a, b) => a.order - b.order),
-    careers: (data.careers || []).filter((c) => c.isActive && !c.isDeleted && c.status === 'open').sort((a, b) => a.order - b.order),
-    conferences: (data.conferences || []).filter((c) => c.isActive && !c.isDeleted).sort((a, b) => a.order - b.order),
-    research: (data.research || []).filter((r) => r.isActive && !r.isDeleted).sort((a, b) => a.order - b.order),
-    sliders: (data.sliders || []).filter((s) => s.isActive && !s.isDeleted).sort((a, b) => a.order - b.order),
-    schedule: data.schedule,
-    contact: data.contact,
-    settings: data.settings,
-    seo: data.seo,
-  });
+// Get all published website content in one fast request directly from Supabase / live store
+apiRouter.get('/public/content', async (req: Request, res: Response) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
+
+  try {
+    const liveContent = await getLivePublicContent();
+    res.json(liveContent);
+  } catch (err: any) {
+    console.error('Error fetching live public content:', err);
+    const data = db.get();
+    res.json({
+      doctor: data.doctor,
+      services: data.services.filter((s) => s.isActive && !s.isDeleted).sort((a, b) => a.order - b.order),
+      conditions: data.conditions.filter((c) => c.isActive && !c.isDeleted).sort((a, b) => a.order - b.order),
+      endoscopy: data.endoscopy.filter((e) => e.isActive && !e.isDeleted).sort((a, b) => a.order - b.order),
+      articles: data.articles.filter((a) => a.status === 'published' && !a.isDeleted),
+      pages: (data.pages || []).filter((p) => p.isActive && !p.isDeleted).sort((a, b) => a.order - b.order),
+      faqs: data.faqs.filter((f) => f.isActive && !f.isDeleted).sort((a, b) => a.order - b.order),
+      videos: (data.videos || []).filter((v) => v.isActive && !v.isDeleted).sort((a, b) => a.order - b.order),
+      careers: (data.careers || []).filter((c) => c.isActive && !c.isDeleted && c.status === 'open').sort((a, b) => a.order - b.order),
+      conferences: (data.conferences || []).filter((c) => c.isActive && !c.isDeleted).sort((a, b) => a.order - b.order),
+      research: (data.research || []).filter((r) => r.isActive && !r.isDeleted).sort((a, b) => a.order - b.order),
+      sliders: (data.sliders || []).filter((s) => s.isActive && !s.isDeleted).sort((a, b) => a.order - b.order),
+      schedule: data.schedule,
+      contact: data.contact,
+      settings: data.settings,
+      seo: data.seo,
+      media: data.media.filter((m) => m.status !== 'trash').slice(0, 50),
+    });
+  }
 });
 
 // Patient Booking Submission
@@ -605,6 +635,7 @@ apiRouter.put('/admin/doctor', requireAuth, requireRole(['admin']), (req: Authen
   data.doctor = { ...data.doctor, ...req.body };
   db.logActivity(req.user!, 'تعديل بيانات الطبيب', 'بيانات الطبيب', 'تم تحديث النبذة والمؤهلات والخبرات الطبية');
   db.save();
+  syncEntityToSupabase('doctor', data.doctor).catch(() => {});
   res.json({ success: true, doctor: data.doctor });
 });
 
@@ -629,7 +660,7 @@ apiRouter.post('/admin/services', requireAuth, requireRole(['admin', 'content_ma
     description: String(description || '').trim(),
     fullDescription: String(fullDescription || '').trim(),
     iconName: iconName || 'Activity',
-    image: image || '/images/clinic-logo.jpg',
+    image: image || 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/clinic-logo.jpg',
     features: Array.isArray(features) ? features : [],
     metaTitle: metaTitle || `${title} | عيادة د. عبدالباسط مقبل`,
     metaDescription: metaDescription || description || '',
@@ -642,6 +673,7 @@ apiRouter.post('/admin/services', requireAuth, requireRole(['admin', 'content_ma
   data.services.push(newService);
   db.logActivity(req.user!, 'إضافة خدمة', 'الخدمات الطبية', `تمت إضافة خدمة جديدة: ${newService.title}`);
   db.save();
+  syncEntityToSupabase('service', newService).catch(() => {});
 
   res.status(201).json({ success: true, item: newService });
 });
@@ -655,6 +687,7 @@ apiRouter.put('/admin/services/:id', requireAuth, requireRole(['admin', 'content
   Object.assign(service, req.body, { updatedAt: new Date().toISOString() });
   db.logActivity(req.user!, 'تعديل خدمة', 'الخدمات الطبية', `تم تعديل الخدمة: ${service.title}`);
   db.save();
+  syncEntityToSupabase('service', service).catch(() => {});
 
   res.json({ success: true, item: service });
 });
@@ -720,6 +753,7 @@ apiRouter.post('/admin/conditions', requireAuth, requireRole(['admin', 'content_
   data.conditions.push(newCond);
   db.logActivity(req.user!, 'إضافة حالة مرضية', 'الحالات المرضية', `تمت إضافة حالة: ${newCond.name}`);
   db.save();
+  syncEntityToSupabase('condition', newCond).catch(() => {});
 
   res.status(201).json({ success: true, item: newCond });
 });
@@ -733,6 +767,7 @@ apiRouter.put('/admin/conditions/:id', requireAuth, requireRole(['admin', 'conte
   Object.assign(cond, req.body, { updatedAt: new Date().toISOString() });
   db.logActivity(req.user!, 'تعديل حالة مرضية', 'الحالات المرضية', `تم تعديل الحالة: ${cond.name}`);
   db.save();
+  syncEntityToSupabase('condition', cond).catch(() => {});
 
   res.json({ success: true, item: cond });
 });
@@ -839,6 +874,7 @@ apiRouter.post('/admin/endoscopy', requireAuth, requireRole(['admin', 'content_m
   data.endoscopy.push(newEndo);
   db.logActivity(req.user!, 'إضافة إجراء منظار', 'مناظير الجهاز الهضمي', `تمت إضافة منظار: ${newEndo.title}`);
   db.save();
+  syncEntityToSupabase('endoscopy', newEndo).catch(() => {});
 
   res.status(201).json({ success: true, item: newEndo });
 });
@@ -852,6 +888,7 @@ apiRouter.put('/admin/endoscopy/:id', requireAuth, requireRole(['admin', 'conten
   Object.assign(endo, req.body, { updatedAt: new Date().toISOString() });
   db.logActivity(req.user!, 'تعديل إجراء منظار', 'مناظير الجهاز الهضمي', `تم تعديل: ${endo.title}`);
   db.save();
+  syncEntityToSupabase('endoscopy', endo).catch(() => {});
 
   res.json({ success: true, item: endo });
 });
@@ -908,6 +945,7 @@ apiRouter.post('/admin/articles/:id/restore', requireAuth, requireRole(['admin',
   article.status = 'published';
   db.logActivity(req.user!, 'استعادة مقال طبي', 'المقالات الطبية', `تمت استعادة المقال: ${article.title}`);
   db.save();
+  syncEntityToSupabase('article', article).catch(() => {});
   res.json({ success: true, item: article, message: 'تمت استعادة المقال ونشره بنجاح' });
 });
 
@@ -938,7 +976,7 @@ apiRouter.post('/admin/articles', requireAuth, requireRole(['admin', 'content_ma
     author: author || 'د. عبدالباسط عبده الحاج مقبل',
     readTime: readTime || '3 دقائق',
     date: date || new Date().toISOString().split('T')[0],
-    image: image || '/images/endoscopy-gastro.jpg',
+    image: image || 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/endoscopy-gastro.jpg',
     tags: parsedTags,
     keywords: parsedKeywords,
     metaTitle: metaTitle ? String(metaTitle).trim() : undefined,
@@ -952,6 +990,7 @@ apiRouter.post('/admin/articles', requireAuth, requireRole(['admin', 'content_ma
   data.articles.unshift(newArticle);
   db.logActivity(req.user!, 'إضافة مقال طبي', 'المقالات الطبية', `تم نشر مقال جديد: ${newArticle.title}`);
   db.save();
+  syncEntityToSupabase('article', newArticle).catch(() => {});
 
   res.status(201).json({ success: true, item: newArticle });
 });
@@ -965,6 +1004,7 @@ apiRouter.put('/admin/articles/:id', requireAuth, requireRole(['admin', 'content
   Object.assign(article, req.body, { updatedAt: new Date().toISOString() });
   db.logActivity(req.user!, 'تعديل مقال طبي', 'المقالات الطبية', `تم تعديل المقال: ${article.title}`);
   db.save();
+  syncEntityToSupabase('article', article).catch(() => {});
 
   res.json({ success: true, item: article });
 });
@@ -1468,6 +1508,7 @@ apiRouter.post('/admin/media/:id/replace', requireAuth, requireRole(['admin', 'c
 
   // Update media item record
   mediaItem.url = newUrl;
+  mediaItem.publicUrl = newUrl;
   mediaItem.name = newName;
   mediaItem.title = newName;
   mediaItem.fileSize = newSize;
@@ -1476,6 +1517,23 @@ apiRouter.post('/admin/media/:id/replace', requireAuth, requireRole(['admin', 'c
 
   // Replace across all models in database
   const replaceResult = replaceMediaUrlGlobally(oldUrl, newUrl, data);
+
+  // Synchronize media and affected records to Supabase PostgreSQL immediately
+  syncEntityToSupabase('media', mediaItem).catch(() => {});
+  syncEntityToSupabase('doctor', data.doctor).catch(() => {});
+  syncEntityToSupabase('settings', data.settings).catch(() => {});
+  (data.services || []).forEach((srv) => {
+    if (srv.image === newUrl) syncEntityToSupabase('service', srv).catch(() => {});
+  });
+  (data.sliders || []).forEach((sld) => {
+    if (sld.image === newUrl || sld.imageUrl === newUrl) syncEntityToSupabase('slider', sld).catch(() => {});
+  });
+  (data.articles || []).forEach((art) => {
+    if (art.image === newUrl) syncEntityToSupabase('article', art).catch(() => {});
+  });
+  (data.endoscopy || []).forEach((endo) => {
+    if (endo.image === newUrl) syncEntityToSupabase('endoscopy', endo).catch(() => {});
+  });
 
   db.logActivity(
     req.user!,
@@ -1487,7 +1545,7 @@ apiRouter.post('/admin/media/:id/replace', requireAuth, requireRole(['admin', 'c
 
   res.json({
     success: true,
-    message: `تم استبدال الصورة بنجاح وتحديثها في ${replaceResult.count} مواضع في الموقع`,
+    message: `تم استبدال الصورة بنجاح وتحديثها في ${replaceResult.count} مواضع في الموقع ومزامنتها مع Supabase`,
     newUrl,
     updatedCount: replaceResult.count,
     places: replaceResult.places,
@@ -1615,6 +1673,7 @@ apiRouter.put('/admin/settings', requireAuth, requireRole(['super_admin', 'admin
   data.settings = { ...data.settings, ...req.body };
   db.logActivity(req.user!, 'تعديل إعدادات الموقع', 'إعدادات الموقع', 'تم تحديث اسم الموقع أو الهيدر أو وضع الصيانة');
   db.save();
+  syncEntityToSupabase('settings', data.settings).catch(() => {});
   res.json({ success: true, settings: data.settings });
 });
 
@@ -1635,9 +1694,11 @@ apiRouter.put('/admin/homepage', requireAuth, requireRole(['admin']), (req: Auth
   const data = db.get();
   if (req.body.settings) {
     data.settings = { ...data.settings, ...req.body.settings };
+    syncEntityToSupabase('settings', data.settings).catch(() => {});
   }
   if (req.body.doctor) {
     data.doctor = { ...data.doctor, ...req.body.doctor };
+    syncEntityToSupabase('doctor', data.doctor).catch(() => {});
   }
   db.logActivity(req.user!, 'تعديل الصفحة الرئيسية', 'إدارة الصفحة الرئيسية', 'تم تحديث عناصر الصفحة الرئيسية والأقسام والبانرات');
   db.save();
@@ -2456,8 +2517,9 @@ apiRouter.get('/admin/sliders', requireAuth, (req: AuthenticatedRequest, res: Re
 });
 
 apiRouter.post('/admin/sliders', requireAuth, requireRole(['admin', 'content_manager']), (req: AuthenticatedRequest, res: Response) => {
-  const { title, subtitle, description, imageUrl, buttonText, buttonLink, order, isActive } = req.body;
-  if (!title || !imageUrl) {
+  const { title, subtitle, description, imageUrl, image, buttonText, buttonLink, order, isActive } = req.body;
+  const targetImage = imageUrl || image;
+  if (!title || !targetImage) {
     return res.status(400).json({ error: 'عنوان الشريحة ورابط الصورة مطلوبان' });
   }
 
@@ -2469,7 +2531,8 @@ apiRouter.post('/admin/sliders', requireAuth, requireRole(['admin', 'content_man
     title: String(title).trim(),
     subtitle: String(subtitle || '').trim(),
     description: description ? String(description).trim() : undefined,
-    imageUrl: String(imageUrl).trim(),
+    imageUrl: String(targetImage).trim(),
+    image: String(targetImage).trim(),
     buttonText: buttonText ? String(buttonText).trim() : 'احجز موعدك',
     buttonLink: buttonLink ? String(buttonLink).trim() : '#booking',
     order: Number(order) || data.sliders.length + 1,
@@ -2481,6 +2544,7 @@ apiRouter.post('/admin/sliders', requireAuth, requireRole(['admin', 'content_man
   data.sliders.push(newSlide);
   db.logActivity(req.user!, 'إضافة شريحة سلايدر', 'السلايدر', `تمت إضافة شريحة: ${newSlide.title}`);
   db.save();
+  syncEntityToSupabase('slider', newSlide).catch(() => {});
 
   res.status(201).json({ success: true, item: newSlide });
 });
@@ -2491,9 +2555,15 @@ apiRouter.put('/admin/sliders/:id', requireAuth, requireRole(['admin', 'content_
   const slide = (data.sliders || []).find((s) => s.id === id);
   if (!slide) return res.status(404).json({ error: 'شريحة السلايدر غير موجودة' });
 
-  Object.assign(slide, req.body, { updatedAt: new Date().toISOString() });
+  const targetImage = req.body.imageUrl || req.body.image || slide.imageUrl || slide.image;
+  Object.assign(slide, req.body, {
+    imageUrl: targetImage,
+    image: targetImage,
+    updatedAt: new Date().toISOString(),
+  });
   db.logActivity(req.user!, 'تعديل شريحة سلايدر', 'السلايدر', `تم تعديل شريحة: ${slide.title}`);
   db.save();
+  syncEntityToSupabase('slider', slide).catch(() => {});
 
   res.json({ success: true, item: slide });
 });

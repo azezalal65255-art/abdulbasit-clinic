@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { db, generateId } from './db';
 import { AuthenticatedRequest } from './auth';
 import { createClient } from '@supabase/supabase-js';
+import { syncEntityToSupabase } from './supabaseService';
 import {
   DATA_UPLOADS_DIR,
   UPLOADS_DIR,
@@ -101,19 +102,29 @@ export const handleUploadFile = async (req: Request, res: Response) => {
           db.logActivity(authUser, 'رفع ملف إلى Supabase Storage', 'الوسائط', `تم رفع وحفظ: ${newMedia.name}`);
         }
         db.save();
+        // Sync to Supabase PostgreSQL table
+        syncEntityToSupabase('media', newMedia).catch(() => {});
       } catch {}
 
       return res.status(200).json({
         success: true,
         url: publicUrl,
+        public_url: publicUrl,
+        publicUrl: publicUrl,
         downloadURL: publicUrl,
+        storage_path: `media/${storageKey}`,
         storagePath: `media/${storageKey}`,
         fileName: uniqueFileName,
+        file_name: uniqueFileName,
         originalName: displayName,
+        original_name: displayName,
         contentType: req.file.mimetype,
-        size: req.file.size,
+        mime_type: req.file.mimetype,
         mimeType: req.file.mimetype,
+        size: req.file.size,
+        file_size: req.file.size,
         uploadedAt: new Date().toISOString(),
+        created_at: new Date().toISOString(),
       });
     } catch (err: any) {
       console.error('[Server Supabase Upload Error]:', err);

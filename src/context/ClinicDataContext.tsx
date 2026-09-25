@@ -9,6 +9,7 @@ import {
   FAQS,
 } from '../data/clinicData';
 import { api } from '../services/api';
+import { resolveImageUrl } from '../utils/imageUrlResolver';
 import {
   Specialty,
   MedicalCondition,
@@ -175,18 +176,24 @@ export function ClinicDataProvider({ children }: { children: ReactNode }) {
             title: res.doctor?.title || prev.doctor.title,
             jobTitle: res.doctor?.jobTitle || prev.doctor.jobTitle,
             bio: res.doctor?.bio || prev.doctor.bio,
-            photo: res.doctor?.photo || prev.doctor.photo,
+            photo: resolveImageUrl(res.doctor?.photo, prev.doctor.photo),
             experiences: res.doctor?.experiences || prev.doctor.experiences,
             qualifications: res.doctor?.qualifications?.length ? res.doctor.qualifications : prev.doctor.qualifications,
           },
           services: res.services?.length
-            ? res.services.map((s: any) => ({
-                id: s.id,
-                title: s.title,
-                description: s.description,
-                iconName: s.iconName || 'Activity',
-                features: s.features || [],
-              }))
+            ? res.services.map((s: any) => {
+                const img = resolveImageUrl(s.image, '');
+                return {
+                  id: s.id,
+                  title: s.title,
+                  description: s.description,
+                  fullDescription: s.fullDescription || s.description,
+                  iconName: s.iconName || 'Activity',
+                  image: img,
+                  imageUrl: img,
+                  features: s.features || [],
+                };
+              })
             : prev.services,
           conditions: res.conditions?.length
             ? res.conditions.map((c: any) => ({
@@ -200,28 +207,36 @@ export function ClinicDataProvider({ children }: { children: ReactNode }) {
               }))
             : prev.conditions,
           endoscopy: res.endoscopy?.length
-            ? res.endoscopy.map((e: any) => ({
-                id: e.id,
-                title: e.title,
-                description: e.description,
-                image: e.image,
-                indications: e.indications || [],
-                duration: e.duration,
-                prepSummary: e.prepSummary,
-              }))
+            ? res.endoscopy.map((e: any) => {
+                const img = resolveImageUrl(e.image, '');
+                return {
+                  id: e.id,
+                  title: e.title,
+                  description: e.description,
+                  image: img,
+                  imageUrl: img,
+                  indications: e.indications || [],
+                  duration: e.duration,
+                  prepSummary: e.prepSummary,
+                };
+              })
             : prev.endoscopy,
           articles: res.articles?.length
-            ? res.articles.map((a: any) => ({
-                id: a.id,
-                title: a.title,
-                slug: a.slug,
-                excerpt: a.excerpt,
-                category: a.category,
-                readTime: a.readTime,
-                date: a.date,
-                image: a.image,
-                content: Array.isArray(a.content) ? a.content : [a.content],
-              }))
+            ? res.articles.map((a: any) => {
+                const img = resolveImageUrl(a.image, '');
+                return {
+                  id: a.id,
+                  title: a.title,
+                  slug: a.slug,
+                  excerpt: a.excerpt,
+                  category: a.category,
+                  readTime: a.readTime,
+                  date: a.date,
+                  image: img,
+                  imageUrl: img,
+                  content: Array.isArray(a.content) ? a.content : [a.content],
+                };
+              })
             : prev.articles,
           pages: Array.isArray(res.pages) ? res.pages : prev.pages,
           faqs: res.faqs?.length
@@ -235,8 +250,25 @@ export function ClinicDataProvider({ children }: { children: ReactNode }) {
           careers: Array.isArray(res.careers) ? res.careers : prev.careers,
           conferences: Array.isArray(res.conferences) ? res.conferences : prev.conferences,
           research: Array.isArray(res.research) ? res.research : prev.research,
-          sliders: Array.isArray(res.sliders) ? res.sliders : prev.sliders,
+          sliders: Array.isArray(res.sliders)
+            ? res.sliders.map((s: any) => {
+                const img = resolveImageUrl(s.image || s.imageUrl, '');
+                return {
+                  ...s,
+                  image: img,
+                  imageUrl: img,
+                };
+              })
+            : prev.sliders,
           schedule: res.schedule || prev.schedule,
+          settings: res.settings
+            ? {
+                ...prev.settings,
+                ...res.settings,
+                logoUrl: resolveImageUrl(res.settings.logoUrl, prev.settings.logoUrl),
+                heroDoctorPhoto: resolveImageUrl(res.settings.heroDoctorPhoto, prev.settings.heroDoctorPhoto),
+              }
+            : prev.settings,
           contact: {
             phones: [res.contact?.phone1, res.contact?.phone2].filter(Boolean),
             whatsapp: res.contact?.whatsapp || prev.contact.whatsapp,

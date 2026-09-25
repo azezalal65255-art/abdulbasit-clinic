@@ -96,7 +96,34 @@ export async function uploadFile(
       });
 
     if (retryError || !retryData) {
-      throw new Error(`فشل رفع الصورة إلى Supabase Storage: ${retryError?.message || uploadError?.message || 'خطأ غير معروف'}`);
+      console.warn(`Direct client Supabase upload attempt failed (${retryError?.message || uploadError?.message}), trying API bridge upload to Supabase...`);
+      
+      // Fallback via server API which uploads with server Supabase credentials
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('category', category);
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || `فشل رفع الصورة إلى Supabase Storage: ${retryError?.message || uploadError?.message || 'خطأ غير معروف'}`);
+      }
+
+      const resData = await res.json();
+      if (onProgress) onProgress(100);
+
+      return {
+        downloadURL: resData.url || resData.downloadURL || resData.publicUrl,
+        storagePath: resData.storagePath || resData.storage_path || `media/${folder}/${uniqueName}`,
+        fileName: resData.fileName || resData.file_name || uniqueName,
+        originalName: resData.originalName || resData.original_name || file.name,
+        contentType: resData.mimeType || resData.contentType || file.type,
+        size: resData.size || file.size,
+        uploadedAt: resData.uploadedAt || resData.created_at || new Date().toISOString(),
+      };
     }
 
     const { data: pubData } = supabase.storage.from('media').getPublicUrl(asciiPath);
