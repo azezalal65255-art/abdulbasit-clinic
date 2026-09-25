@@ -118,7 +118,7 @@ export const ALL_CONDITIONS: DetailedCondition[] = [
     relatedConditions: ['gastritis', 'h-pylori', 'peptic-ulcer'],
     relatedServices: ['srv_digestive', 'srv_endoscopy'],
     keywords: ['ارتجاع المريء', 'حموضة المعدة', 'حرقان الصدر', 'فتق الحجاب الحاجز', 'مريء باريت', 'علاج الارتجاع'],
-    image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/conditions_gerd_medical_1789678862238.jpg',
+    image: '/images/med_photo_chest_reflux_1790359389738.jpg',
     isFeatured: true,
   },
   {
@@ -181,7 +181,7 @@ export const ALL_CONDITIONS: DetailedCondition[] = [
     relatedConditions: ['gastritis', 'peptic-ulcer', 'gerd'],
     relatedServices: ['srv_digestive', 'srv_endoscopy'],
     keywords: ['جرثومة المعدة', 'الملوية البوابية', 'قرحة المعدة', 'علاج الجرثومة', 'فحص البراز للجرثومة', 'فحص النفس'],
-    image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/conditions_hpylori_medical_1789678875710.jpg',
+    image: '/images/med_photo_stomach_ache_1790359401032.jpg',
     isFeatured: true,
   },
   {
@@ -244,7 +244,7 @@ export const ALL_CONDITIONS: DetailedCondition[] = [
     relatedConditions: ['h-pylori', 'gastritis', 'gerd'],
     relatedServices: ['srv_digestive', 'srv_endoscopy'],
     keywords: ['قرحة المعدة', 'قرحة الاثني عشر', 'نزيف القرحة', 'ألم فم المعدة', 'منظار القرحة', 'علاج القرحة'],
-    image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/conditions_peptic_ulcer_1789678887760.jpg',
+    image: '/images/med_photo_stomach_ache_1790359401032.jpg',
     isFeatured: true,
   },
   {
@@ -296,7 +296,7 @@ export const ALL_CONDITIONS: DetailedCondition[] = [
     relatedConditions: ['gerd', 'h-pylori', 'peptic-ulcer'],
     relatedServices: ['srv_digestive', 'srv_endoscopy'],
     keywords: ['التهاب المعدة', 'تسلخ المعدة', 'عسر الهضم', 'ألم فم المعدة'],
-    image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/conditions_heartburn_stomach_pain_1788698267022.jpg',
+    image: '/images/med_photo_stomach_ache_1790359401032.jpg',
     isFeatured: false,
   },
   {
@@ -360,7 +360,7 @@ export const ALL_CONDITIONS: DetailedCondition[] = [
     relatedConditions: ['chronic-constipation', 'celiac-disease', 'crohns-and-colitis'],
     relatedServices: ['srv_digestive'],
     keywords: ['القولون العصبي', 'انتفاخ البطن', 'غازات الأمعاء', 'فودماب', 'تقلصات القولون', 'علاج القولون'],
-    image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/conditions_ibs_colon_1789678900059.jpg',
+    image: '/images/med_photo_lower_abdomen_1790359414441.jpg',
     isFeatured: true,
   },
   {
@@ -415,7 +415,7 @@ export const ALL_CONDITIONS: DetailedCondition[] = [
     relatedConditions: ['unexplained-anemia', 'ibs', 'chronic-diarrhea'],
     relatedServices: ['srv_digestive', 'srv_endoscopy'],
     keywords: ['حساسية القمح', 'الداء البطني', 'الجلوتين', 'خملات الأمعاء', 'سوء الامتصاص', 'خالي من الجلوتين'],
-    image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/conditions_celiac_villi_1789678937011.jpg',
+    image: '/images/med_photo_lower_abdomen_1790359414441.jpg',
     isFeatured: false,
   },
   {
@@ -522,7 +522,7 @@ export const ALL_CONDITIONS: DetailedCondition[] = [
     relatedConditions: ['ibs', 'colon-polyps', 'colonoscopy'],
     relatedServices: ['srv_digestive'],
     keywords: ['الإمساك المزمن', 'كسل القولون', 'صعوبة الإخراج', 'علاج الإمساك'],
-    image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/conditions_digestive_system_3d_1788698251854.jpg',
+    image: '/images/med_photo_digestive_diet_1790359517558.jpg',
     isFeatured: false,
   },
   {
@@ -573,7 +573,7 @@ export const ALL_CONDITIONS: DetailedCondition[] = [
     relatedConditions: ['celiac-disease', 'crohns-and-colitis', 'ibs'],
     relatedServices: ['srv_digestive', 'srv_endoscopy'],
     keywords: ['الإسهال المزمن', 'علاج الإسهال', 'سوء الامتصاص', 'التهاب الأمعاء'],
-    image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/digestive_3d.jpg',
+    image: '/images/med_photo_digestive_diet_1790359517558.jpg',
     isFeatured: false,
   },
 
@@ -640,7 +640,7 @@ export const ALL_CONDITIONS: DetailedCondition[] = [
     relatedConditions: ['elevated-liver-enzymes', 'viral-hepatitis', 'liver-cirrhosis'],
     relatedServices: ['srv_liver'],
     keywords: ['الكبد الدهني', 'دهون الكبد', 'إنزيمات الكبد', 'تليف الكبد', 'تخسيس دهون الكبد', 'علاج دهون الكبد'],
-    image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/conditions_fatty_liver_1789678914191.jpg',
+    image: '/images/med_photo_ultrasound_liver_1790359449355.jpg',
     isFeatured: true,
   },
   {
@@ -701,7 +701,7 @@ export const ALL_CONDITIONS: DetailedCondition[] = [
     relatedConditions: ['fatty-liver', 'viral-hepatitis', 'liver-cirrhosis', 'gallbladder-stones'],
     relatedServices: ['srv_liver'],
     keywords: ['ارتفاع إنزيمات الكبد', 'وظائف الكبد', 'ALT', 'AST', 'GGT', 'فحص الكبد', 'علاج إنزيمات الكبد'],
-    image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/conditions_liver_enzymes_1789678925520.jpg',
+    image: '/images/med_photo_liver_lab_vials_1790359473191.jpg',
     isFeatured: true,
   },
   {
@@ -814,7 +814,7 @@ export const ALL_CONDITIONS: DetailedCondition[] = [
     relatedConditions: ['viral-hepatitis', 'fatty-liver', 'elevated-liver-enzymes', 'upper-gi-endoscopy'],
     relatedServices: ['srv_liver', 'srv_endoscopy'],
     keywords: ['تليف الكبد', 'دوالي المريء', 'الاستسقاء', 'ارتفاع ضغط الوريد البابي', 'ربط الدوالي بالمنظار'],
-    image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/conditions_fatty_liver_medical_1788698296693.jpg',
+    image: '/images/med_photo_ultrasound_liver_1790359449355.jpg',
     isFeatured: false,
   },
   {
@@ -928,7 +928,7 @@ export const ALL_CONDITIONS: DetailedCondition[] = [
     relatedConditions: ['unexplained-anemia', 'diabetes-complications'],
     relatedServices: ['srv_internal'],
     keywords: ['ارتفاع ضغط الدم', 'ضغط الدم', 'أمراض الباطنة', 'علاج الضغط', 'القاتل الصامت'],
-    image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/conditions_internal_diseases_care_1788699497794.jpg',
+    image: '/images/med_photo_clinic_desk_steth_1790359496141.jpg',
     isFeatured: true,
   },
   {
@@ -1155,7 +1155,7 @@ export const ALL_CONDITIONS: DetailedCondition[] = [
     relatedConditions: ['colon-polyps', 'crohns-and-colitis', 'ibs', 'unexplained-anemia'],
     relatedServices: ['srv_endoscopy'],
     keywords: ['منظار القولون', 'استئصال اللحميات', 'زوائد القولون', 'نزيف القولون', 'فحص القولون الوقائي'],
-    image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/conditions_colonoscopy_procedure_1788637565115.jpg',
+    image: '/images/med_photo_colonoscope_room_1790359436716.jpg',
     isFeatured: true,
   },
   {
@@ -1210,7 +1210,7 @@ export const ALL_CONDITIONS: DetailedCondition[] = [
     relatedConditions: ['colonoscopy', 'unexplained-anemia', 'chronic-constipation'],
     relatedServices: ['srv_endoscopy'],
     keywords: ['لحميات القولون', 'زوائد القولون', 'استئصال اللحمية', 'سرطان القولون', 'منظار القولون الوقائي'],
-    image: 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/conditions_endoscopy_advanced_proc_1788699537152.jpg',
+    image: '/images/med_photo_colonoscope_room_1790359436716.jpg',
     isFeatured: false,
   },
 ];
