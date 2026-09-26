@@ -1,3 +1,4 @@
+import { ImageUploadField } from "./ImageUploadField";
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { useClinicData } from '../../context/ClinicDataContext';
@@ -41,6 +42,7 @@ export const ConditionsView: React.FC<ConditionsViewProps> = ({ showToast }) => 
     keywordsText: '',
     metaTitle: '',
     metaDescription: '',
+    image: '',
     isActive: true,
   });
 
@@ -76,6 +78,7 @@ export const ConditionsView: React.FC<ConditionsViewProps> = ({ showToast }) => 
       keywordsText: '',
       metaTitle: '',
       metaDescription: '',
+      image: '/images/gerd_2026_1790363403788.jpg',
       isActive: true,
     });
     setIsModalOpen(true);
@@ -95,6 +98,7 @@ export const ConditionsView: React.FC<ConditionsViewProps> = ({ showToast }) => 
       keywordsText: keywordsArr.join(', '),
       metaTitle: item.metaTitle || '',
       metaDescription: item.metaDescription || '',
+      image: item.image || item.imageUrl || '',
       isActive: item.isActive !== false,
     });
     setIsModalOpen(true);
@@ -125,6 +129,8 @@ export const ConditionsView: React.FC<ConditionsViewProps> = ({ showToast }) => 
       keywords,
       metaTitle: formData.metaTitle.trim() || undefined,
       metaDescription: formData.metaDescription.trim() || formData.description.trim(),
+      image: formData.image.trim(),
+      imageUrl: formData.image.trim(),
       isActive: formData.isActive,
     };
 

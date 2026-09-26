@@ -135,7 +135,7 @@ export const VideosView: React.FC<VideosViewProps> = ({ showToast }) => {
         externalUrl: formData.videoType === 'external' ? finalUrl : '',
         uploadedUrl: formData.videoType === 'upload' ? finalUrl : '',
         // If custom thumbnail is not set, use a YouTube fallback if available
-        thumbnailUrl: formData.thumbnailUrl || (formData.videoType === 'youtube' ? `https://img.youtube.com/vi/${getYouTubeId(formData.youtubeUrl)}/hqdefault.jpg` : '/images/video-placeholder.jpg'),
+        thumbnailUrl: formData.thumbnailUrl || (formData.videoType === 'youtube' ? `https://img.youtube.com/vi/${getYouTubeId(formData.youtubeUrl)}/hqdefault.jpg` : '/images/real_endoscopy_suite_1790357440526.jpg'),
       };
 
       if (selectedItem) {
@@ -247,7 +247,7 @@ export const VideosView: React.FC<VideosViewProps> = ({ showToast }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {videos.map((vid, idx) => {
             const ytId = getYouTubeId(vid.youtubeUrl || '');
-            const coverImage = vid.thumbnailUrl || (ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : '/images/video-placeholder.jpg');
+            const coverImage = vid.thumbnailUrl || (ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : '/images/real_endoscopy_suite_1790357440526.jpg');
 
             return (
               <div

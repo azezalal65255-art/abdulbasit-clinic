@@ -305,6 +305,16 @@ export const api = {
     request<any>(`/api/admin/media/${id}?force=${force}&permanent=${permanent}`, {
       method: 'DELETE',
     }),
+  batchSaveMedia: (items: any[]) =>
+    request<any>('/api/admin/media/batch-save', {
+      method: 'POST',
+      body: JSON.stringify({ items }),
+    }),
+  bulkMediaAction: (action: string, ids: string[], category?: string) =>
+    request<any>('/api/admin/media/bulk-action', {
+      method: 'POST',
+      body: JSON.stringify({ action, ids, category }),
+    }),
   emptyMediaTrash: () =>
     request<any>('/api/admin/media/empty-trash', {
       method: 'POST',

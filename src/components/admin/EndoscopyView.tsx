@@ -61,7 +61,7 @@ export const EndoscopyView: React.FC<EndoscopyViewProps> = ({ showToast }) => {
     setFormData({
       title: '',
       description: '',
-      image: '/images/endoscopy-unit.jpg',
+      image: '/images/med_photo_endoscopy_tower_1790359425401.jpg',
       indicationsText: '',
       duration: '15 - 20 دقيقة',
       prepSummary: 'صيام 6 إلى 8 ساعات قبل الإجراء',

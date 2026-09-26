@@ -495,3 +495,139 @@ export function sanitizeAndPersistMediaUrls<T>(input: T, keyContext = ''): T {
   return input;
 }
 
+
+
+/**
+ * Automatically catalogs all active website images into the central media library
+ * so that EVERY single image in the site (doctor, logo, sliders, conditions, services,
+ * endoscopy, articles, pages) can be managed, searched, filtered, and replaced.
+ */
+export function syncAllEntityImagesToMediaLibrary(data: any): number {
+  if (!data) return 0;
+  if (!Array.isArray(data.media)) data.media = [];
+
+  const existingByUrl = new Map<string, any>();
+  const existingById = new Map<string, any>();
+
+  data.media.forEach((m: any) => {
+    if (m && m.url) existingByUrl.set(String(m.url).trim(), m);
+    if (m && m.id) existingById.set(m.id, m);
+  });
+
+  let addedCount = 0;
+
+  const registerIfMissing = (
+    url: string | undefined,
+    title: string,
+    category: string,
+    entityType: string,
+    entityId: string
+  ) => {
+    if (!url || typeof url !== "string") return;
+    const cleanUrl = url.trim();
+    if (!cleanUrl || cleanUrl.startsWith("data:")) return;
+
+    if (existingByUrl.has(cleanUrl)) {
+      const existing = existingByUrl.get(cleanUrl);
+      if (!existing.entityType) existing.entityType = entityType;
+      if (!existing.entity_type) existing.entity_type = entityType;
+      if (!existing.entityId) existing.entityId = entityId;
+      if (!existing.entity_id) existing.entity_id = entityId;
+      if (!existing.category || existing.category === "عام") existing.category = category;
+      return;
+    }
+
+    const baseName = cleanUrl.split("?")[0].split("/").pop() || "image.jpg";
+    const newMedia = {
+      id: `med_${entityType}_${entityId.replace(/[^a-zA-Z0-9_-]/g, "_")}`,
+      name: title,
+      title: title,
+      file_name: baseName,
+      url: cleanUrl,
+      public_url: cleanUrl,
+      publicUrl: cleanUrl,
+      storage_path: cleanUrl.includes("supabase.co") ? cleanUrl.split("/media/")[1] || `images/${baseName}` : `images/${baseName}`,
+      storagePath: cleanUrl.includes("supabase.co") ? cleanUrl.split("/media/")[1] || `images/${baseName}` : `images/${baseName}`,
+      category: category,
+      altText: title,
+      file_size: "350 KB",
+      fileSize: "350 KB",
+      file_type: "image/jpeg",
+      fileType: "image/jpeg",
+      mime_type: "image/jpeg",
+      status: "active" as const,
+      deleted_at: null,
+      deletedAt: null,
+      entityType: entityType,
+      entity_type: entityType,
+      entityId: entityId,
+      entity_id: entityId,
+      uploadedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      uploadedBy: "د. عبدالباسط مقبل",
+      uploaded_by: "د. عبدالباسط مقبل",
+      isVideo: false,
+    };
+
+    data.media.push(newMedia);
+    existingByUrl.set(cleanUrl, newMedia);
+    existingById.set(newMedia.id, newMedia);
+    addedCount++;
+  };
+
+  // 1. Doctor Photo
+  if (data.doctor?.photo) {
+    registerIfMissing(data.doctor.photo, "صورة الطبيب الشخصية الرسمية", "طبيب", "doctor", "main_doctor");
+  }
+
+  // 2. Clinic Logo
+  if (data.settings?.logoUrl) {
+    registerIfMissing(data.settings.logoUrl, "شعار العيادة والمركز الطبي الرسمي", "شعار", "settings", "main_logo");
+  }
+
+  // 3. Hero Images
+  if (data.settings?.heroDoctorPhoto) {
+    registerIfMissing(data.settings.heroDoctorPhoto, "صورة الطبيب في واجهة الغلاف الرئيسي (Hero)", "الواجهة", "settings", "hero_doctor");
+  }
+  if (data.settings?.heroImage) {
+    registerIfMissing(data.settings.heroImage, "صورة الغلاف الرئيسي للموقع", "الواجهة", "settings", "hero_image");
+  }
+
+  // 4. Sliders
+  (data.sliders || []).forEach((s: any, idx: number) => {
+    registerIfMissing(s.image || s.imageUrl, `شريحة سلايدر: ${s.title || idx + 1}`, "السلايدر", "slider", s.id || `slider_${idx}`);
+  });
+
+  // 5. Conditions
+  (data.conditions || []).forEach((c: any) => {
+    let cat = "الجهاز الهضمي";
+    if (c.category === "liver") cat = "الكبد";
+    else if (c.category === "internal" || c.category === "internal-medicine") cat = "الباطنة";
+    registerIfMissing(c.image || c.imageUrl, `مرض: ${c.name}`, cat, "condition", c.id);
+  });
+
+  // 6. Services
+  (data.services || []).forEach((s: any) => {
+    registerIfMissing(s.image || s.imageUrl, `خدمة: ${s.title}`, "الخدمات", "service", s.id);
+  });
+
+  // 7. Endoscopy
+  (data.endoscopy || []).forEach((e: any) => {
+    registerIfMissing(e.image || e.imageUrl, `منظار: ${e.title}`, "المناظير", "endoscopy", e.id);
+  });
+
+  // 8. Articles
+  (data.articles || []).forEach((a: any) => {
+    registerIfMissing(a.image || a.imageUrl, `مقال: ${a.title}`, "المقالات", "article", a.id);
+  });
+
+  // 9. Custom Pages
+  (data.pages || []).forEach((p: any) => {
+    registerIfMissing(p.coverImage, `صفحة داخلية: ${p.title}`, "أخرى", "page", p.id);
+  });
+
+  return addedCount;
+}

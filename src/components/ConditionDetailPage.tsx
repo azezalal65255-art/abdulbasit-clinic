@@ -1,3 +1,4 @@
+import { useClinicData } from "../context/ClinicDataContext";
 import React, { useState, useEffect } from 'react';
 import { 
   ArrowRight, 
@@ -30,7 +31,19 @@ export const ConditionDetailPage: React.FC<ConditionDetailPageProps> = ({
   onSelectCondition,
   onBookClick,
 }) => {
+  const { conditions: dynamicConditions = [] } = useClinicData();
   const [copied, setCopied] = useState(false);
+
+  // Dynamic override from Supabase database if edited
+  const dbMatch = dynamicConditions.find(
+    (dc: any) => dc.id === condition.id || dc.slug === condition.slug || (dc.name && condition.name.includes(dc.name.slice(0, 6)))
+  );
+  const activeCondition = dbMatch ? {
+    ...condition,
+    name: dbMatch.name || condition.name,
+    shortDescription: dbMatch.description || condition.shortDescription,
+    image: dbMatch.image || (dbMatch as any).imageUrl || condition.image,
+  } : condition;
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
   // Scroll to top and update page title when condition changes
@@ -201,12 +214,12 @@ export const ConditionDetailPage: React.FC<ConditionDetailPageProps> = ({
             {/* Left: 100% Realistic Medical Image (Clean, No Text Overlays) */}
             <div className="lg:col-span-5 relative bg-slate-900 min-h-[280px] lg:min-h-full flex items-center justify-center overflow-hidden group">
               <img
-                src={condition.image}
-                alt={condition.name}
+                src={activeCondition.image}
+                alt={activeCondition.name}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 referrerPolicy="no-referrer"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/images/conditions/digestive_system_3d_1788698251854.jpg';
+                  (e.target as HTMLImageElement).src = '/images/gerd_2026_1790363403788.jpg';
                 }}
               />
             </div>

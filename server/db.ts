@@ -151,7 +151,7 @@ function getDefaultDatabase(): DatabaseSchema {
       description: 'تشخيص ومتابعة أمراض الكبد والتهابات الكبد وارتفاع إنزيمات الكبد والكبد الدهني وغيرها من الحالات المتعلقة بالكبد.',
       fullDescription: 'نقدم تقييماً شاملاً لجميع اعتلالات الكبد الحادة والمزمنة، بما في ذلك الكبد الدهني، والتليف الكبدي، والتهابات الكبد الفيروسية (B و C)، مع بروتوكولات دوائية ومتابعة دورية منتظمة لوظائف الكبد ومستويات الإنزيمات.',
       iconName: 'Activity',
-      image: '/images/med_photo_ultrasound_liver_1790359449355.jpg',
+      image: '/images/real_liver_care_1790357413712.jpg',
       features: [
         'تشخيص وعلاج الكبد الدهني واضطرابات الدهون',
         'متابعة ارتفاع إنزيمات الكبد المزمن والحاد',
@@ -172,7 +172,7 @@ function getDefaultDatabase(): DatabaseSchema {
       description: 'تشخيص ومتابعة اضطرابات الجهاز الهضمي والمعدة والمريء والقولون والأمعاء.',
       fullDescription: 'علاج متكامل لمشاكل الجهاز الهضمي العلوي والسفلي، بدءاً من جرثومة المعدة المقاومة وقرحة الاثني عشر، ووصولاً إلى متلازمة القولون العصبي وحساسية القمح وعسر الهضم الوظيفي.',
       iconName: 'Stethoscope',
-      image: '/images/med_photo_stomach_ache_1790359401032.jpg',
+      image: '/images/real_gastro_consult_1790357428010.jpg',
       features: [
         'علاج ارتجاع المريء وحموضة المعدة المزمنة',
         'تشخيص وعلاج جرثومة المعدة (H. Pylori)',
@@ -214,7 +214,7 @@ function getDefaultDatabase(): DatabaseSchema {
       description: 'فحص بصري دقيق للمريء والمعدة والاثني عشر بأحدث مناظير الفيديو عالية الدقة.',
       fullDescription: 'إجراء منظار المعدة بكاميرا فائقة الوضوح للكشف عن القرح، الالتهابات، جرثومة المعدة، والنزيف، تحت مهدئ خفيف ومخدر موضعي لراحة تامة للمريض خلال 10 دقائق.',
       iconName: 'Eye',
-      image: '/images/med_photo_endoscopy_tower_1790359425401.jpg',
+      image: '/images/gastroscopy_hd_equipment_1789912625461.jpg',
       features: [
         'فحص دقيق لجدار المريء والمعدة والاثني عشر',
         'الكشف المباشر عن القرح والالتهابات والنزيف',
@@ -235,7 +235,7 @@ function getDefaultDatabase(): DatabaseSchema {
       description: 'فحص القولون والمستقيم للكشف المبكر عن الزوائد اللحمية والتهابات الأمعاء المزمنة.',
       fullDescription: 'تنظير تخصصي كامل للقولون لتقييم حالات الإسهال أو الإمساك المزمن والنزيف الهضمي، واستئصال الزوائد اللحمية وقائياً لمنع تحولها إلى أورام.',
       iconName: 'ShieldAlert',
-      image: '/images/med_photo_colonoscope_room_1790359436716.jpg',
+      image: '/images/colonoscopy_tech_scan_1789912639994.jpg',
       features: [
         'الكشف المبكر عن زوائد القولون واستئصالها',
         'تشخيص التهاب القولون التقرحي ومرض كرون',
@@ -256,7 +256,7 @@ function getDefaultDatabase(): DatabaseSchema {
       description: 'أخذ عينات مجهرية دقيقة دون أي ألم أثناء إجراء المنظار للتحليل الباثولوجي.',
       fullDescription: 'أخذ عينات نسيجية مجهرية من بطانة المعدة أو القولون بواسطة ملقط منظاري دقيق، لإرسالها للفحص الباثولوجي وتأكيد تشخيص حساسية القمح أو جرثومة المعدة بدقة مخبرية متناهية.',
       iconName: 'Layers',
-      image: '/images/med_photo_biopsy_microscope_1790359460826.jpg',
+      image: '/images/real_pathology_biopsy_1790357531842.jpg',
       features: [
         'عينات دقيقة بأمان وعناية فائقة',
         'تأكيد تشخيص حساسية القمح (السيلياك)',

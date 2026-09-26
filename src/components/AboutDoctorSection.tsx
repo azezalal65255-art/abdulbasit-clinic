@@ -1,3 +1,4 @@
+import { PROTECTED_SUPABASE_DOCTOR_PHOTO, LOCAL_DOCTOR_PHOTO } from "../constants/clinicAssets";
 import React, { useState } from 'react';
 import { Stethoscope, Heart, Shield, Cpu, Award, X, CheckCircle2, GraduationCap } from 'lucide-react';
 import { QUALIFICATIONS, CLINIC_INFO } from '../data/clinicData';
@@ -52,7 +53,8 @@ export const AboutDoctorSection: React.FC = () => {
             <div className="lg:col-span-4 flex justify-center">
               <div className="w-64 sm:w-72 aspect-4/5 rounded-2xl overflow-hidden bg-white p-2 border border-[#c6e8d6] shadow-md">
                 <img
-                  src={doctor?.photo || "/images/dr-abdulbasit.jpg"}
+                  src={doctor?.photo || PROTECTED_SUPABASE_DOCTOR_PHOTO}
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = LOCAL_DOCTOR_PHOTO; }}
                   alt={doctorName}
                   className="w-full h-full object-contain object-center rounded-xl"
                   referrerPolicy="no-referrer"

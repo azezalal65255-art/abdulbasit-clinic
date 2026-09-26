@@ -381,7 +381,7 @@ export function reconcileMediaSystem(data: any): ReconciliationReport {
           syncFileToDist(base);
         } else {
           // Use authentic fallback image
-          art.image = '/images/endoscopy-gastro.jpg';
+          art.image = '/images/real_endoscopy_suite_1790357440526.jpg';
           report.brokenLinksRepaired++;
           report.details.repairedUrls.push({
             oldUrl: base,

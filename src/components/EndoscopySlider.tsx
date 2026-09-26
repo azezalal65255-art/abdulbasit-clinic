@@ -41,7 +41,7 @@ const ENDOSCOPY_SLIDES: EndoscopySlideItem[] = [
       'فحص مريح تحت مهدئ خفيف وآمن دون أي شعور بالألم',
       'شاشات طبية جراحية مخصصة لعرض حي فائق الدقة',
     ],
-    image: '/images/conditions/slider_endoscopy_1788698729763.jpg',
+    image: '/images/slider_endoscopy_1788698729763.jpg',
     statBadge: { number: 'HD 4K', label: 'دقة استثنائية' },
   },
   {
@@ -57,7 +57,7 @@ const ENDOSCOPY_SLIDES: EndoscopySlideItem[] = [
       'أخذ خزعات مجهرية فورية لتشخيص السيلياك وحساسية القمح',
       'تقرير فوري ملون مدعم بالصور الطبية التوضيحية',
     ],
-    image: '/images/conditions/gastroscopy_procedure_1788698312313.jpg',
+    image: '/images/upper_endoscopy_2026_1790363471039.jpg',
     statBadge: { number: '10-15', label: 'دقيقة فقط' },
   },
   {
@@ -73,7 +73,7 @@ const ENDOSCOPY_SLIDES: EndoscopySlideItem[] = [
       'تشخيص وعلاج نزيف القولون والالتهابات التقرحية المزمنة',
       'فحص وقائي دوري معتمد دولياً لسلامة القولون والمستقيم',
     ],
-    image: '/images/conditions/colonoscopy_procedure_1788637565115.jpg',
+    image: '/images/colonoscopy_2026_1790363483272.jpg',
     statBadge: { number: 'NBI', label: 'كشف مجهري' },
   },
   {
@@ -89,7 +89,7 @@ const ENDOSCOPY_SLIDES: EndoscopySlideItem[] = [
       'ملحقات أحادية الاستخدام لكل مريض (Disposable)',
       'تخزين المناظير في دواليب ضغط إيجابي معقمة بجودة المشافي الكبرى',
     ],
-    image: '/images/conditions/endoscopy_advanced_proc_1788699537152.jpg',
+    image: '/images/med_photo_sterile_tools_1790359485070.jpg',
     statBadge: { number: '100%', label: 'أمان وتعقيم' },
   },
   {
@@ -105,7 +105,7 @@ const ENDOSCOPY_SLIDES: EndoscopySlideItem[] = [
       'نظام متابعة دقيق لنتائج الخزعات المجهرية والعينات',
       'إرشادات غذائية مخصصة لحماية بطانة الجهاز الهضمي',
     ],
-    image: '/images/conditions/digestive_system_3d_1788698251854.jpg',
+    image: '/images/med_photo_clinic_desk_steth_1790359496141.jpg',
     statBadge: { number: '3D', label: 'رعاية شاملة' },
   },
 ];

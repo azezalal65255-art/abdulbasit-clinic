@@ -1,3 +1,4 @@
+import { PROTECTED_SUPABASE_DOCTOR_PHOTO, LOCAL_DOCTOR_PHOTO } from "../constants/clinicAssets";
 import React from 'react';
 import { GraduationCap, Award, BookOpen, Microscope, ShieldCheck } from 'lucide-react';
 import { QUALIFICATIONS, CLINIC_INFO } from '../data/clinicData';
@@ -8,7 +9,7 @@ export const QualificationsSection: React.FC = () => {
 
   const doctorName = doctor?.name || CLINIC_INFO.doctorName;
   const doctorTitle = doctor?.title || CLINIC_INFO.doctorTitle;
-  const doctorPhoto = doctor?.photo || '/images/dr-abdulbasit.jpg';
+  const doctorPhoto = doctor?.photo || PROTECTED_SUPABASE_DOCTOR_PHOTO;
   const doctorBio = doctor?.bio || 'د. عبدالباسط عبده الحاج مقبل، استشاري أمراض الباطنة والجهاز الهضمي والكبد والمناظير، وأستاذ الباطنة المساعد بكلية الطب والعلوم الصحية بجامعة ذمار، حاصل على دكتوراه (بورد) أمراض الباطنة ودبلوم عالي في الباطنة، وعضو الجمعية الأوروبية لمناظير الجهاز الهضمي (ESGE).';
   const qualifications = doctor?.qualifications?.length ? doctor.qualifications : QUALIFICATIONS;
 
@@ -52,6 +53,7 @@ export const QualificationsSection: React.FC = () => {
           <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-white shrink-0 border border-[#BED8EA] shadow-2xs">
             <img
               src={doctorPhoto}
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = LOCAL_DOCTOR_PHOTO; }}
               alt={doctorName}
               className="w-full h-full object-contain object-top"
               referrerPolicy="no-referrer"

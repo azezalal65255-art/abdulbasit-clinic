@@ -1,3 +1,4 @@
+import { PROTECTED_SUPABASE_CLINIC_LOGO } from "../../constants/clinicAssets";
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { ImageUploadField } from './ImageUploadField';
@@ -75,7 +76,7 @@ export const PagesManagerView: React.FC<PagesManagerViewProps> = ({ showToast })
       slug: '',
       content: '',
       excerpt: '',
-      coverImage: '/images/clinic-logo.jpg',
+      coverImage: PROTECTED_SUPABASE_CLINIC_LOGO,
       metaTitle: '',
       metaDescription: '',
       keywordsText: '',

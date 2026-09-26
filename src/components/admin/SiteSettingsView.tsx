@@ -1,3 +1,4 @@
+import { PROTECTED_SUPABASE_CLINIC_LOGO } from "../../constants/clinicAssets";
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { ImageUploadField } from './ImageUploadField';
@@ -187,7 +188,7 @@ export const SiteSettingsView: React.FC<SiteSettingsViewProps> = ({ showToast })
               <button
                 type="button"
                 onClick={() => {
-                  setSettings({ ...settings, logoUrl: '/images/clinic-logo.jpg' });
+                  setSettings({ ...settings, logoUrl: PROTECTED_SUPABASE_CLINIC_LOGO });
                   showToast('info', 'تم اختيار الشعار الافتراضي للمركز');
                 }}
                 className="inline-flex items-center gap-1 py-1 px-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-[11px] font-bold text-slate-700 rounded-lg cursor-pointer transition-colors"

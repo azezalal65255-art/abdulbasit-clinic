@@ -1,3 +1,4 @@
+import { PROTECTED_SUPABASE_DOCTOR_PHOTO, LOCAL_DOCTOR_PHOTO } from "../constants/clinicAssets";
 import React from 'react';
 import { ShieldCheck, Clock, Users, Calendar, Send } from 'lucide-react';
 import { useClinicData } from '../context/ClinicDataContext';
@@ -110,7 +111,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onBookClick, onContact
               
               <div className="relative overflow-hidden">
                 <img
-                  src={doctor?.photo || "/images/dr-abdulbasit.jpg"}
+                  src={doctor?.photo || PROTECTED_SUPABASE_DOCTOR_PHOTO}
+                onError={(e) => { (e.currentTarget as HTMLImageElement).src = LOCAL_DOCTOR_PHOTO; }}
                   alt="د. عبدالباسط عبده الحاج مقبل"
                   className="w-full h-auto object-contain drop-shadow-lg"
                   referrerPolicy="no-referrer"

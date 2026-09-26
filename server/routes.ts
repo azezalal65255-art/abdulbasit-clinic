@@ -21,6 +21,7 @@ import {
   UPLOADS_DIR,
   DIST_UPLOADS_DIR,
   syncFileToDist,
+  syncAllEntityImagesToMediaLibrary,
 } from './storageUtils';
 import { reconcileMediaSystem, checkFileExists } from './mediaReconciliation';
 import {
@@ -671,7 +672,7 @@ apiRouter.post('/admin/services', requireAuth, requireRole(['admin', 'content_ma
     description: String(description || '').trim(),
     fullDescription: String(fullDescription || '').trim(),
     iconName: iconName || 'Activity',
-    image: image || 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/clinic-logo.jpg',
+    image: image || '/images/med_photo_clinic_desk_steth_1790359496141.jpg',
     features: Array.isArray(features) ? features : [],
     metaTitle: metaTitle || `${title} | عيادة د. عبدالباسط مقبل`,
     metaDescription: metaDescription || description || '',
@@ -885,7 +886,7 @@ apiRouter.post('/admin/endoscopy', requireAuth, requireRole(['admin', 'content_m
     title: String(title).trim(),
     slug: slug ? String(slug).trim() : `endo-${Date.now()}`,
     description: String(description || '').trim(),
-    image: image || '/images/endoscopy-gastro.jpg',
+    image: image || '/images/upper_endoscopy_2026_1790363471039.jpg',
     indications: Array.isArray(indications) ? indications : [],
     duration: duration || '15 دقيقة',
     prepSummary: String(prepSummary || '').trim(),
@@ -1008,7 +1009,7 @@ apiRouter.post('/admin/articles', requireAuth, requireRole(['admin', 'content_ma
     author: author || 'د. عبدالباسط عبده الحاج مقبل',
     readTime: readTime || '3 دقائق',
     date: date || new Date().toISOString().split('T')[0],
-    image: image || 'https://rmvhgoewsegyohdbsjsd.supabase.co/storage/v1/object/public/media/images/endoscopy-gastro.jpg',
+    image: image || '/images/real_stomach_exam_1790357472966.jpg',
     tags: parsedTags,
     keywords: parsedKeywords,
     metaTitle: metaTitle ? String(metaTitle).trim() : undefined,
@@ -1168,6 +1169,9 @@ apiRouter.put('/admin/contact', requireAuth, requireRole(['admin']), (req: Authe
 apiRouter.get('/admin/media', requireAuth, (req: AuthenticatedRequest, res: Response) => {
   const { status = 'active', category, type, search } = req.query;
   const data = db.get();
+  
+  // Ensure all website images are cataloged into media library
+  syncAllEntityImagesToMediaLibrary(data);
 
   let mediaItems = (data.media || []).map((m) => {
     const usages = findMediaUsages(m.url, data);
@@ -1230,6 +1234,12 @@ apiRouter.put('/admin/media/:id', requireAuth, requireRole(['admin', 'content_ma
   const data = db.get();
   const item = (data.media || []).find((m) => m.id === id);
   if (!item) return res.status(404).json({ error: 'ملف الوسائط غير موجود' });
+
+  // Protected Asset Guard
+  const rawUrl = String(item.url || item.public_url || '').toLowerCase();
+  if (item.id === 'med_1' || item.id === 'med_2' || rawUrl.includes('dr-abdulbasit') || rawUrl.includes('clinic-logo') || rawUrl.includes('hero-doctor')) {
+    return res.status(403).json({ error: 'عنصر محمي: صورة الطبيب الرسمية وشعار العيادة المعتمد أصول محمية بشكل دائم وممنوع حذفها.' });
+  }
 
   if (title) item.title = String(title).trim();
   if (name) item.name = String(name).trim();
@@ -1350,6 +1360,122 @@ apiRouter.get('/admin/media/health', requireAuth, (req: AuthenticatedRequest, re
     message: 'تم فحص جميع ملفات الوسائط ومطابقتها بالتخزين الدائم',
   });
 });
+
+
+// Batch save all media changes explicitly to DB & Supabase
+
+// Bulk action for media library (multi-select: bulk trash, bulk restore, bulk set category)
+apiRouter.post('/admin/media/bulk-action', requireAuth, requireRole(['admin', 'content_manager']), async (req: AuthenticatedRequest, res: Response) => {
+  const { action, ids, category } = req.body;
+  if (!action || !Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ error: 'بيانات الإجراء الجماعي غير صالحة' });
+  }
+
+  const data = db.get();
+  let modifiedCount = 0;
+
+  ids.forEach((id: string) => {
+    const item = (data.media || []).find((m) => m.id === id);
+    if (!item) return;
+
+    // Protected Asset Guard for trash/delete
+    const rawUrl = String(item.url || item.public_url || '').toLowerCase();
+    const isProtected = item.id === 'med_1' || item.id === 'med_2' || rawUrl.includes('dr-abdulbasit') || rawUrl.includes('clinic-logo');
+
+    if (action === 'trash' && !isProtected) {
+      item.status = 'trash';
+      item.deleted_at = new Date().toISOString();
+      item.deletedAt = item.deleted_at;
+      modifiedCount++;
+    } else if (action === 'restore') {
+      item.status = 'active';
+      item.deleted_at = null;
+      item.deletedAt = null;
+      modifiedCount++;
+    } else if (action === 'set_category' && category) {
+      item.category = String(category).trim();
+      item.updatedAt = new Date().toISOString();
+      item.updated_at = item.updatedAt;
+      modifiedCount++;
+    }
+    syncEntityToSupabase('media', item).catch(() => {});
+  });
+
+  db.logActivity(
+    req.user!,
+    `إجراء جماعي للوسائط (${action})`,
+    'الصور والوسائط',
+    `تم تطبيق الإجراء (${action}) على ${modifiedCount} ملف وسائط بنجاح`
+  );
+  db.save();
+
+  res.json({
+    success: true,
+    modifiedCount,
+    message: `تم تطبيق الإجراء بنجاح على ${modifiedCount} ملف وسائط`,
+  });
+});
+
+
+apiRouter.post('/admin/media/batch-save', requireAuth, requireRole(['admin', 'content_manager']), async (req: AuthenticatedRequest, res: Response) => {
+  const { items } = req.body;
+  if (!Array.isArray(items)) {
+    return res.status(400).json({ error: 'بيانات التحديث غير صالحة' });
+  }
+
+  const data = db.get();
+  let updatedCount = 0;
+  const failedItems: string[] = [];
+
+  for (const item of items) {
+    if (!item.id) continue;
+    try {
+      const idx = (data.media || []).findIndex((m) => m.id === item.id);
+      if (idx !== -1) {
+        data.media[idx] = {
+          ...data.media[idx],
+          name: String(item.name || item.title || data.media[idx].name).trim(),
+          title: String(item.title || item.name || data.media[idx].title).trim(),
+          category: item.category || data.media[idx].category,
+          altText: String(item.altText || item.alt_text || data.media[idx].altText).trim(),
+          status: item.status || data.media[idx].status,
+          url: item.url || data.media[idx].url,
+          public_url: item.url || item.public_url || data.media[idx].public_url,
+          updatedAt: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        await syncEntityToSupabase('media', data.media[idx]);
+        updatedCount++;
+      }
+    } catch (err: any) {
+      failedItems.push(item.title || item.name || item.id);
+    }
+  }
+
+  db.logActivity(
+    req.user!,
+    'حفظ التغييرات في مكتبة الوسائط المركزية',
+    'الصور والوسائط',
+    `تم حفظ وتثبيت ${updatedCount} ملف وسائط بنجاح في قاعدة البيانات والتخزين السحابي الدائم`
+  );
+  db.save();
+
+  if (failedItems.length > 0) {
+    return res.status(207).json({
+      success: false,
+      updatedCount,
+      failedItems,
+      message: `تم حفظ ${updatedCount} عنصر وفشل حفظ: ${failedItems.join('، ')}`,
+    });
+  }
+
+  res.json({
+    success: true,
+    updatedCount,
+    message: 'تم حفظ جميع الصور والوسائط بنجاح.',
+  });
+});
+
 
 apiRouter.post('/admin/media', requireAuth, requireRole(['admin', 'content_manager']), (req: AuthenticatedRequest, res: Response) => {
   let { name, title, url, altText, fileSize, fileType, category, isVideo, youtubeUrl, youtubeId, duration, storage_path, storagePath } = req.body;
@@ -1578,8 +1704,73 @@ apiRouter.post('/admin/media/:id/replace', requireAuth, requireRole(['admin', 'c
   mediaItem.fileType = newMime;
   mediaItem.uploadedAt = new Date().toISOString();
 
-  // Replace across all models in database
-  const replaceResult = replaceMediaUrlGlobally(oldUrl, newUrl, data);
+  const scope = req.body?.scope || "all";
+  let replaceResult = { count: 0, places: [] as string[] };
+
+  if (scope === "single" && req.body?.targetEntityType && req.body?.targetEntityId) {
+    const eType = String(req.body.targetEntityType).toLowerCase();
+    const eId = String(req.body.targetEntityId);
+
+    if (eType === "condition") {
+      const cond = (data.conditions || []).find((c: any) => c.id === eId);
+      if (cond) {
+        cond.image = newUrl;
+        cond.imageUrl = newUrl;
+        replaceResult.count = 1;
+        replaceResult.places.push(`حالة مرضية: ${cond.name}`);
+        syncEntityToSupabase("condition", cond).catch(() => {});
+      }
+    } else if (eType === "service") {
+      const srv = (data.services || []).find((s: any) => s.id === eId);
+      if (srv) {
+        srv.image = newUrl;
+        srv.imageUrl = newUrl;
+        replaceResult.count = 1;
+        replaceResult.places.push(`خدمة: ${srv.title}`);
+        syncEntityToSupabase("service", srv).catch(() => {});
+      }
+    } else if (eType === "endoscopy") {
+      const endo = (data.endoscopy || []).find((e: any) => e.id === eId);
+      if (endo) {
+        endo.image = newUrl;
+        endo.imageUrl = newUrl;
+        replaceResult.count = 1;
+        replaceResult.places.push(`منظار: ${endo.title}`);
+        syncEntityToSupabase("endoscopy", endo).catch(() => {});
+      }
+    } else if (eType === "article") {
+      const art = (data.articles || []).find((a: any) => a.id === eId);
+      if (art) {
+        art.image = newUrl;
+        art.imageUrl = newUrl;
+        replaceResult.count = 1;
+        replaceResult.places.push(`مقال: ${art.title}`);
+        syncEntityToSupabase("article", art).catch(() => {});
+      }
+    } else if (eType === "slider") {
+      const sld = (data.sliders || []).find((s: any) => s.id === eId);
+      if (sld) {
+        sld.image = newUrl;
+        sld.imageUrl = newUrl;
+        replaceResult.count = 1;
+        replaceResult.places.push(`سلايدر: ${sld.title}`);
+        syncEntityToSupabase("slider", sld).catch(() => {});
+      }
+    } else if (eType === "doctor") {
+      data.doctor.photo = newUrl;
+      replaceResult.count = 1;
+      replaceResult.places.push("صورة الطبيب");
+      syncEntityToSupabase("doctor", data.doctor).catch(() => {});
+    } else if (eType === "settings" || eType === "logo") {
+      data.settings.logoUrl = newUrl;
+      replaceResult.count = 1;
+      replaceResult.places.push("شعار العيادة");
+      syncEntityToSupabase("settings", data.settings).catch(() => {});
+    }
+  } else {
+    // Global replacement across all models in database
+    replaceResult = replaceMediaUrlGlobally(oldUrl, newUrl, data);
+  }
 
   // Synchronize media and affected records to Supabase PostgreSQL immediately
   syncEntityToSupabase('media', mediaItem).catch(() => {});

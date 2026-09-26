@@ -1,3 +1,4 @@
+import { PROTECTED_SUPABASE_DOCTOR_PHOTO, PROTECTED_SUPABASE_CLINIC_LOGO } from "../../constants/clinicAssets";
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { ImageUploadField } from './ImageUploadField';
@@ -49,7 +50,7 @@ export const HomePageManagerView: React.FC<HomePageManagerViewProps> = ({ showTo
 
   const [settings, setSettings] = useState<any>({
     siteName: 'عيادة الدكتور عبدالباسط مقبل',
-    heroDoctorPhoto: '/images/dr-abdulbasit.jpg',
+    heroDoctorPhoto: PROTECTED_SUPABASE_DOCTOR_PHOTO,
     whatsappNumber: '777554626',
     defaultWhatsAppText: 'مرحبًا د. عبدالباسط، أود الاستفسار وحجز موعد في العيادة.',
     sectionsConfig: {
@@ -85,7 +86,7 @@ export const HomePageManagerView: React.FC<HomePageManagerViewProps> = ({ showTo
         id: 'ban_1',
         title: 'رعاية تخصصية لأمراض الجهاز الهضمي والكبد والمناظير',
         subtitle: 'بإشراف د. عبدالباسط عبده الحاج مقبل - استشاري الباطنة والجهاز الهضمي والكبد والمناظير',
-        imageUrl: '/images/dr-abdulbasit.jpg',
+        imageUrl: PROTECTED_SUPABASE_DOCTOR_PHOTO,
         buttonText: 'احجز موعد استشارة',
         buttonLink: '#booking',
         isActive: true,
@@ -191,7 +192,7 @@ export const HomePageManagerView: React.FC<HomePageManagerViewProps> = ({ showTo
       id: `ban_${Date.now()}`,
       title: 'عنوان البانر الترويجي الجديد',
       subtitle: 'وصف فرعي يبرز إحدى خدمات العيادة أو مواعيد الاستشارة',
-      imageUrl: '/images/dr-abdulbasit.jpg',
+      imageUrl: PROTECTED_SUPABASE_DOCTOR_PHOTO,
       buttonText: 'احجز الآن',
       buttonLink: '#booking',
       isActive: true,
@@ -408,7 +409,7 @@ export const HomePageManagerView: React.FC<HomePageManagerViewProps> = ({ showTo
               <ImageUploadField
                 label="صورة الطبيب المعتمدة في الواجهة الرئيسية"
                 sublabel="رفع مباشر من جهازك أو اختيار من وسائط العيادة"
-                value={settings.heroDoctorPhoto || '/images/dr-abdulbasit.jpg'}
+                value={settings.heroDoctorPhoto || PROTECTED_SUPABASE_DOCTOR_PHOTO}
                 onChange={(url) => setSettings({ ...settings, heroDoctorPhoto: url })}
                 category="طبيب"
                 aspectRatio="portrait"
@@ -417,10 +418,10 @@ export const HomePageManagerView: React.FC<HomePageManagerViewProps> = ({ showTo
 
             <div className="pt-3 border-t border-[#F0F4F8] flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <img src="/images/clinic-logo.jpg" alt="Logo" className="w-10 h-10 object-contain rounded-lg border border-[#E2EAF0]" />
+                <img src={PROTECTED_SUPABASE_CLINIC_LOGO} alt="Logo" className="w-10 h-10 object-contain rounded-lg border border-[#E2EAF0]" />
                 <div>
                   <div className="text-xs font-bold text-[#17354F]">شعار المركز الطبي</div>
-                  <div className="text-[10px] text-[#667788]">/images/clinic-logo.jpg</div>
+                  <div className="text-[10px] text-[#667788]">https://rmvhgoewsegyohdbsjsd.supabase.co/.../clinic-logo.jpg</div>
                 </div>
               </div>
               <span className="text-[11px] bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md font-bold">

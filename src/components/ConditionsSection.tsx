@@ -1,3 +1,4 @@
+import { useClinicData } from "../context/ClinicDataContext";
 import React, { useState } from 'react';
 import {
   Flame,
@@ -22,10 +23,29 @@ interface ConditionsSectionProps {
 }
 
 export const ConditionsSection: React.FC<ConditionsSectionProps> = ({ onSelectCondition }) => {
+  const { conditions: dynamicConditions = [] } = useClinicData();
   const [showAllModal, setShowAllModal] = useState(false);
   const [selectedConditionDetail, setSelectedConditionDetail] = useState<DetailedCondition | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Merge dynamic database conditions with ALL_CONDITIONS
+  const allEnrichedConditions = React.useMemo(() => {
+    return ALL_CONDITIONS.map((cond) => {
+      const match = dynamicConditions.find(
+        (dc: any) => dc.id === cond.id || dc.slug === cond.slug || (dc.name && cond.name.includes(dc.name.slice(0, 6)))
+      );
+      if (match) {
+        return {
+          ...cond,
+          name: match.name || cond.name,
+          shortDescription: match.description || cond.shortDescription,
+          image: match.image || (match as any).imageUrl || cond.image,
+        };
+      }
+      return cond;
+    });
+  }, [dynamicConditions]);
 
   // The EXACT 7 cards displayed in reference-model-1.png (Right-to-Left order):
   const primaryDisplayConditions = [
@@ -33,37 +53,37 @@ export const ConditionsSection: React.FC<ConditionsSectionProps> = ({ onSelectCo
       id: 'gerd',
       title: 'ارتجاع المريء',
       icon: Flame,
-      conditionData: ALL_CONDITIONS.find((c) => c.id === 'gerd'),
+      conditionData: allEnrichedConditions.find((c) => c.id === 'gerd'),
     },
     {
       id: 'h-pylori',
       title: 'جرثومة المعدة',
       icon: Bug,
-      conditionData: ALL_CONDITIONS.find((c) => c.id === 'h-pylori'),
+      conditionData: allEnrichedConditions.find((c) => c.id === 'h-pylori'),
     },
     {
       id: 'peptic-ulcer',
       title: 'قرحة المعدة',
       icon: ShieldAlert,
-      conditionData: ALL_CONDITIONS.find((c) => c.id === 'peptic-ulcer'),
+      conditionData: allEnrichedConditions.find((c) => c.id === 'peptic-ulcer'),
     },
     {
       id: 'ibs',
       title: 'القولون العصبي',
       icon: Layers,
-      conditionData: ALL_CONDITIONS.find((c) => c.id === 'ibs'),
+      conditionData: allEnrichedConditions.find((c) => c.id === 'ibs'),
     },
     {
       id: 'fatty-liver',
       title: 'الكبد الدهني',
       icon: Activity,
-      conditionData: ALL_CONDITIONS.find((c) => c.id === 'fatty-liver'),
+      conditionData: allEnrichedConditions.find((c) => c.id === 'fatty-liver'),
     },
     {
       id: 'liver-enzymes',
       title: 'ارتفاع إنزيمات الكبد',
       icon: TrendingUp,
-      conditionData: ALL_CONDITIONS.find((c) => c.id === 'elevated-liver-enzymes' || c.id === 'liver-enzymes'),
+      conditionData: allEnrichedConditions.find((c) => c.id === 'elevated-liver-enzymes' || c.id === 'liver-enzymes'),
     },
     {
       id: 'other',
@@ -88,7 +108,7 @@ export const ConditionsSection: React.FC<ConditionsSectionProps> = ({ onSelectCo
     }
   };
 
-  const filteredConditions = ALL_CONDITIONS.filter((item) => {
+  const filteredConditions = allEnrichedConditions.filter((item) => {
     const matchesCategory =
       activeCategory === 'all' ||
       item.category === activeCategory ||
@@ -257,7 +277,7 @@ export const ConditionsSection: React.FC<ConditionsSectionProps> = ({ onSelectCo
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           referrerPolicy="no-referrer"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/images/conditions/digestive_system_3d_1788698251854.jpg';
+                            (e.target as HTMLImageElement).src = '/images/gerd_2026_1790363403788.jpg';
                           }}
                         />
                         <span className="absolute top-2 right-2 text-[10px] font-bold text-[#0872B9] bg-white/90 backdrop-blur-xs px-2 py-0.5 rounded-md shadow-2xs">
@@ -321,7 +341,7 @@ export const ConditionsSection: React.FC<ConditionsSectionProps> = ({ onSelectCo
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/images/conditions/digestive_system_3d_1788698251854.jpg';
+                    (e.target as HTMLImageElement).src = '/images/gerd_2026_1790363403788.jpg';
                   }}
                 />
               </div>

@@ -1,3 +1,4 @@
+import { PROTECTED_SUPABASE_CLINIC_LOGO, LOCAL_CLINIC_LOGO } from "../constants/clinicAssets";
 import React, { useState, useEffect } from 'react';
 import { Menu, X, Calendar, Phone } from 'lucide-react';
 import { CLINIC_INFO } from '../data/clinicData';
@@ -12,7 +13,7 @@ export const Header: React.FC<HeaderProps> = ({ activeSection, onNavigate }) => 
   const { doctor, settings, contact, pages = [] } = useClinicData();
   const doctorName = doctor?.name || CLINIC_INFO.doctorName;
   const doctorTitle = doctor?.title || CLINIC_INFO.doctorTitle;
-  const logoUrl = settings?.logoUrl || '/images/clinic-logo.jpg';
+  const logoUrl = settings?.logoUrl || PROTECTED_SUPABASE_CLINIC_LOGO;
   const primaryPhone = contact?.phones?.[0] || '777554626';
 
   const [isScrolled, setIsScrolled] = useState(false);
@@ -81,6 +82,7 @@ export const Header: React.FC<HeaderProps> = ({ activeSection, onNavigate }) => 
           <div className="w-12 h-12 sm:w-14 sm:h-14 shrink-0 rounded-xl bg-white flex items-center justify-center p-1 border border-slate-200 shadow-2xs group-hover:border-[#2fa84f] transition-colors">
             <img
               src={logoUrl}
+              onError={(e) => { (e.currentTarget as HTMLImageElement).src = LOCAL_CLINIC_LOGO; }}
               alt={doctorName}
               className="w-full h-full object-contain"
               referrerPolicy="no-referrer"

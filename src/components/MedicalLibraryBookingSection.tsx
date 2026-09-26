@@ -25,7 +25,7 @@ export const MedicalLibraryBookingSection: React.FC<MedicalLibraryBookingSection
       category: 'الجهاز الهضمي',
       readTime: '3 دقائق',
       date: '2024',
-      image: '/images/article_heartburn.jpg',
+      image: '/images/real_heartburn_care_1790357521162.jpg',
       content: [
         'الحموضة العارضة شائعة، ولكن عندما تتكرر أكثر من مرتين أسبوعياً أو تصاحبها صعوبة في البلع فإنها تتطلب استشارة الطبيب.',
         'التشخيص المبكر يحمي بطانة المريء من التآكل أو المضاعفات طويلة الأمد.',
@@ -39,7 +39,7 @@ export const MedicalLibraryBookingSection: React.FC<MedicalLibraryBookingSection
       category: 'الجهاز الهضمي',
       readTime: '4 دقائق',
       date: '2024',
-      image: '/images/article_h_pylori.jpg',
+      image: '/images/h_pylori_2026_1790363517478.jpg',
       content: [
         'جرثومة المعدة هي بكتيريا حلزونية تستوطن بطانة المعدة وتسبب التهابات متكررة وقرحات هضمية.',
         'يتم تشخيصها عبر فحوصات النفس أو البراز أو الخزعة أثناء المنظار، ويتم علاجها ببروتوكول دوائي منضبط.',
@@ -53,7 +53,7 @@ export const MedicalLibraryBookingSection: React.FC<MedicalLibraryBookingSection
       category: 'أمراض الكبد',
       readTime: '4 دقائق',
       date: '2024',
-      image: '/images/article_fatty_liver.jpg',
+      image: '/images/fatty_liver_2026_1790363451530.jpg',
       content: [
         'يحدث الكبد الدهني نتيجة تراكم الدهون الزائدة في خلايا الكبد، وغالباً ما يتطور بصمت دون أعراض حادة.',
         'يعد تعديل النظام الغذائي وممارسة الرياضة والمتابعة الدورية حجر الزاوية لعكس الحالة وحماية وظائف الكبد.',
@@ -67,7 +67,7 @@ export const MedicalLibraryBookingSection: React.FC<MedicalLibraryBookingSection
       category: 'مناظير',
       readTime: '3 دقائق',
       date: '2024',
-      image: '/images/article_gastroscopy.jpg',
+      image: '/images/real_endoscopy_suite_1790357440526.jpg',
       content: [
         'منظار المعدة هو إجراء دقيق يساعد في تقييم بطانة المريء، المعدة، والاثني عشر.',
         'يُنصح بإجرائه في حالات حرقة الفؤاد المزمنة المقاومة للأدوية، صعوبة البلع، القيء المتكرر، أو فقر الدم غير المفسر.',

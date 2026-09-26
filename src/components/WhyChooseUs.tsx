@@ -1,3 +1,4 @@
+import { PROTECTED_SUPABASE_DOCTOR_PHOTO, LOCAL_DOCTOR_PHOTO } from "../constants/clinicAssets";
 import React from 'react';
 import { Check, Calendar, Clock, MapPin, Phone } from 'lucide-react';
 import { CLINIC_INFO } from '../data/clinicData';
@@ -29,7 +30,8 @@ export const WhyChooseUs: React.FC<WhyChooseUsProps> = ({ onBookClick }) => {
               {/* Doctor portrait thumbnail with mathematically balanced inner radius */}
               <div className="w-32 h-40 sm:w-40 sm:h-52 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-[#E2EAF0] shadow-2xs">
                 <img
-                  src={doctor?.photo || "/images/dr-abdulbasit.jpg"}
+                  src={doctor?.photo || PROTECTED_SUPABASE_DOCTOR_PHOTO}
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = LOCAL_DOCTOR_PHOTO; }}
                   alt={doctor?.name || "د. عبدالباسط عبده الحاج مقبل"}
                   className="w-full h-full object-contain object-top bg-white"
                   referrerPolicy="no-referrer"

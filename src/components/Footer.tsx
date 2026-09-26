@@ -1,3 +1,4 @@
+import { PROTECTED_SUPABASE_CLINIC_LOGO, LOCAL_CLINIC_LOGO } from "../constants/clinicAssets";
 import React from 'react';
 import { MapPin, Phone, Mail, MessageCircle, Globe, Facebook, Shield } from 'lucide-react';
 import { CLINIC_INFO } from '../data/clinicData';
@@ -12,7 +13,7 @@ interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenPrivacy, onOpenTerms, onOpenCareers }) => {
   const { settings, doctor, contact, pages = [] } = useClinicData();
-  const logoUrl = settings?.logoUrl || '/images/clinic-logo.jpg';
+  const logoUrl = settings?.logoUrl || PROTECTED_SUPABASE_CLINIC_LOGO;
   const doctorName = doctor?.name || CLINIC_INFO.doctorName;
   const phoneText = '777554626 – 777560603';
   const emailText = contact?.email || CLINIC_INFO.email;
@@ -254,6 +255,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenPrivacy, onOpe
             <div className="w-10 h-10 rounded-xl bg-white p-1 shrink-0 flex items-center justify-center border border-white/20 shadow-xs overflow-hidden">
               <img
                 src={logoUrl}
+                onError={(e) => { (e.currentTarget as HTMLImageElement).src = LOCAL_CLINIC_LOGO; }}
                 alt={doctorName}
                 className="w-full h-full object-contain"
                 referrerPolicy="no-referrer"

@@ -14,6 +14,8 @@ export interface MedicalCondition {
   description: string;
   shortSummary?: string;
   image?: string;
+  imageUrl?: string;
+  altText?: string;
   symptoms: string[];
   treatmentApproach: string;
 }
@@ -23,6 +25,8 @@ export interface EndoscopyProcedure {
   title: string;
   description: string;
   image: string;
+  imageUrl?: string;
+  altText?: string;
   indications: string[];
   duration: string;
   prepSummary: string;
@@ -132,6 +136,7 @@ export interface Conference {
   id: string;
   title: string;
   image?: string;
+  imageUrl?: string;
   date: string;
   location: string;
   shortDescription?: string;
@@ -151,6 +156,7 @@ export interface Research {
   journal?: string;
   abstract: string;
   image?: string;
+  imageUrl?: string;
   pdfUrl?: string;
   externalUrl?: string;
   doi?: string;

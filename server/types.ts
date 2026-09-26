@@ -38,6 +38,7 @@ export interface MedicalServiceItem {
   iconName: string;
   image: string;
   imageUrl?: string;
+  altText?: string;
   features: string[];
   metaTitle: string;
   metaDescription: string;
@@ -86,6 +87,7 @@ export interface MedicalConditionItem {
   keywords?: string[];
   image?: string;
   imageUrl?: string;
+  altText?: string;
   metaTitle?: string;
   metaDescription?: string;
   isActive: boolean;
@@ -103,6 +105,7 @@ export interface EndoscopyItem {
   description: string;
   image: string;
   imageUrl?: string;
+  altText?: string;
   indications: string[];
   duration: string;
   prepSummary: string;
